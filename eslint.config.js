@@ -14,6 +14,8 @@ export default [
         window: 'readonly',
         document: 'readonly',
         navigator: 'readonly',
+        fetch: 'readonly',
+        process: 'readonly',
       },
       parserOptions: {
         ecmaVersion: 'latest',
