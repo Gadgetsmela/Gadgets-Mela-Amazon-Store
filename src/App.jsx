@@ -13,7 +13,7 @@ import ProductQuickView from './components/ProductQuickView.jsx';
 import TrendingProducts from './components/TrendingProducts.jsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
-import { buildProductMeta, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
+import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
 
 function upsertMeta(selector, createElement) {
   let element = document.head.querySelector(selector);
@@ -30,6 +30,7 @@ export default function App() {
   const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
   const [isLoading, setIsLoading] = useState(true);
   const [products, setProducts] = useState(() => loadProducts());
+  const [productError, setProductError] = useState('');
   const productsRef = useRef(products);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
   const isWishlistImportPage = typeof window !== 'undefined' && window.location.pathname === '/admin/wishlist-import';
@@ -47,9 +48,22 @@ export default function App() {
   }, [products]);
 
   useEffect(() => {
-    refreshProducts(productsRef.current, selectedCountry).then((refreshedProducts) => {
-      setProducts(refreshedProducts);
-    });
+    let active = true;
+    fetchStoredProducts(selectedCountry)
+      .then((storedProducts) => {
+        if (!active) return;
+        setProducts(storedProducts);
+        productsRef.current = storedProducts;
+        return refreshProducts(storedProducts, selectedCountry);
+      })
+      .then((refreshedProducts) => {
+        if (active && refreshedProducts) setProducts(refreshedProducts);
+      })
+      .catch((error) => {
+        if (active) setProductError(error.message);
+      });
+
+    return () => { active = false; };
   }, [selectedCountry]);
 
   useEffect(() => {
@@ -131,7 +145,7 @@ export default function App() {
               activeCategory={activeCategory}
               onCategoryChange={setActiveCategory}
             />
-            <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} onQuickView={setQuickViewProduct} />
+            <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} error={productError} onQuickView={setQuickViewProduct} />
             <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} />
             <BuyingGuides />
             <Newsletter />

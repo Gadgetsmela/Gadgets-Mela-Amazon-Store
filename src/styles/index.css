@@ -615,3 +615,43 @@ button, input { font: inherit; }
   .card-actions { grid-template-columns: 1fr; }
   .quick-view-media { min-height: 16rem; }
 }
+.api-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.05em;
+}
+.api-status.connected { color: #dcfce7; background: rgba(22, 101, 52, 0.34); border: 1px solid rgba(134, 239, 172, 0.3); }
+.api-status.error { color: #fee2e2; background: rgba(127, 29, 29, 0.38); border: 1px solid rgba(252, 165, 165, 0.28); }
+.product-error {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(252, 165, 165, 0.28);
+  border-radius: 1.15rem;
+  color: #fee2e2;
+  background: rgba(127, 29, 29, 0.34);
+}
+.product-error span { color: #fecaca; }
+.gallery-strip {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem;
+  width: 100%;
+  margin-top: 0.75rem;
+}
+.gallery-strip img {
+  width: 3.25rem;
+  height: 3.25rem;
+  padding: 0.2rem;
+  border: 1px solid rgba(251, 146, 60, 0.24);
+  border-radius: 0.8rem;
+  background: rgba(255,255,255,0.08);
+  object-fit: contain;
+}

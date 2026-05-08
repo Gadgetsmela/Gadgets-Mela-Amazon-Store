@@ -4,7 +4,7 @@ export default function DealStrip({ products = [] }) {
   const bestDiscount = Math.max(0, ...products.map((product) => product.discountPercent || 0));
   const averageRating = products.length
     ? (products.reduce((total, product) => total + Number(product.rating || 0), 0) / products.length).toFixed(1)
-    : '4.5';
+    : '—';
   const deals = [
     { icon: Percent, value: `${bestDiscount}%`, label: 'top live discount' },
     { icon: Clock3, value: '24h', label: 'auto-refresh cycle' },

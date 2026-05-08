@@ -1,25 +1,17 @@
-import { products as seedProducts } from '../data/products.js';
 import { DEFAULT_COUNTRY, getCountryConfig } from '../data/countries.js';
 import { withAffiliateTag } from '../utils/affiliate.js';
 
-const STORAGE_KEY = 'gadgets-mela-products-v2';
+const STORAGE_KEY = 'gadgets-mela-products-v3';
 const REFRESH_KEY = 'gadgets-mela-last-refresh';
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const PAAPI_ENDPOINT = import.meta.env.VITE_AMAZON_PAAPI_ENDPOINT || '/api/amazon';
-
-const categoryMap = [
-  ['phone', 'Mobile'], ['iphone', 'Mobile'], ['charger', 'Accessories'], ['case', 'Accessories'],
-  ['cable', 'Accessories'], ['earbuds', 'Audio'], ['headphone', 'Audio'], ['speaker', 'Audio'],
-  ['gaming', 'Gaming'], ['keyboard', 'Gaming'], ['mouse', 'Gaming'], ['alexa', 'Smart Home'],
-  ['plug', 'Smart Home'], ['camera', 'Smart Home'], ['mic', 'Creator Setup'], ['monitor', 'Creator Setup'],
-  ['dock', 'Creator Setup'],
-];
 
 function safeLocalStorage() {
   return typeof window === 'undefined' ? null : window.localStorage;
 }
 
 export function calculateDiscount(product) {
+  if (Number.isFinite(Number(product.discountPercent)) && Number(product.discountPercent) > 0) return Number(product.discountPercent);
   if (!product.originalPriceINR || product.originalPriceINR <= product.priceINR) return 0;
   return Math.round(((product.originalPriceINR - product.priceINR) / product.originalPriceINR) * 100);
 }
@@ -33,31 +25,32 @@ export function enrichProduct(product) {
   const bestDeal = product.bestDeal || deriveBestDeal(product);
   return {
     ...product,
+    name: product.name || product.title || product.asin || 'Amazon product',
+    summary: product.summary || 'Live Amazon Product Advertising API data.',
+    tags: Array.isArray(product.tags) ? product.tags : ['amazon', product.asin?.toLowerCase()].filter(Boolean),
+    galleryImages: Array.isArray(product.galleryImages) ? product.galleryImages : [product.image].filter(Boolean),
     discountPercent: discount,
-    badge: bestDeal ? 'Best Deal' : product.badge || `${discount}% off`,
+    badge: bestDeal ? 'Best Deal' : product.badge || (discount ? `${discount}% off` : 'Live Amazon'),
     bestDeal,
-    availability: product.availability || 'Availability sync pending',
+    availability: product.availability || 'Check Amazon for current availability',
     importStatus: product.importStatus || 'imported',
     updatedAt: product.updatedAt || new Date().toISOString(),
-    trendingScore: product.trendingScore || Math.round((Number(product.rating || 4) * 20) + discount),
+    trendingScore: product.trendingScore || Math.round((Number(product.rating || 0) * 20) + discount + Math.min(Number(product.reviewCount || 0) / 500, 20)),
   };
 }
 
 export function loadProducts() {
   const storage = safeLocalStorage();
-  if (!storage) return seedProducts.map(enrichProduct);
+  if (!storage) return [];
 
   const stored = storage.getItem(STORAGE_KEY);
-  if (!stored) {
-    const seeded = seedProducts.map(enrichProduct);
-    storage.setItem(STORAGE_KEY, JSON.stringify(seeded));
-    return seeded;
-  }
+  if (!stored) return [];
 
   try {
     return JSON.parse(stored).map(enrichProduct);
   } catch {
-    return seedProducts.map(enrichProduct);
+    storage.removeItem(STORAGE_KEY);
+    return [];
   }
 }
 
@@ -86,41 +79,6 @@ export function extractAsinsFromLines(input) {
     .filter(Boolean))];
 }
 
-function inferCategory(name) {
-  const normalized = String(name || '').toLowerCase();
-  return categoryMap.find(([needle]) => normalized.includes(needle))?.[1] || 'Accessories';
-}
-
-function placeholderProduct(input, countryCode = DEFAULT_COUNTRY) {
-  const asin = extractAsin(input) || `GM${Date.now().toString().slice(-8)}`;
-  const name = extractAsin(input) ? `Amazon product ${asin}` : input;
-  const basePrice = 999 + (asin.charCodeAt(0) % 6) * 500;
-  const original = Math.round(basePrice * 1.35);
-
-  return enrichProduct({
-    id: `paapi-${asin}`,
-    asin,
-    name,
-    category: inferCategory(name),
-    priceINR: basePrice,
-    originalPriceINR: original,
-    priceUSD: Math.round((basePrice / 83) * 100) / 100,
-    originalPriceUSD: Math.round((original / 83) * 100) / 100,
-    priceGBP: Math.round((basePrice / 104) * 100) / 100,
-    originalPriceGBP: Math.round((original / 104) * 100) / 100,
-    priceCAD: Math.round((basePrice / 61) * 100) / 100,
-    originalPriceCAD: Math.round((original / 61) * 100) / 100,
-    rating: 4.3 + ((asin.charCodeAt(1) || 2) % 6) / 10,
-    image: '🛒',
-    availability: 'PA API credentials required for live availability',
-    importStatus: 'imported',
-    summary: `Imported from Amazon ${getCountryConfig(countryCode).name}; sync again after PA API credentials are configured.`,
-    tags: ['amazon', 'imported', asin.toLowerCase()],
-    affiliateUrl: withAffiliateTag(`https://${getCountryConfig(countryCode).amazonHost}/dp/${asin}`, countryCode),
-    updatedAt: new Date().toISOString(),
-  });
-}
-
 async function callPaapi(payload) {
   const response = await fetch(PAAPI_ENDPOINT, {
     method: 'POST',
@@ -130,44 +88,59 @@ async function callPaapi(payload) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) throw new Error(data.error || `Amazon PA API proxy returned ${response.status}`);
-  return Array.isArray(data.products) ? data.products.map(enrichProduct) : [];
+  return {
+    products: Array.isArray(data.products) ? data.products.map(enrichProduct) : [],
+    storedProducts: Array.isArray(data.storedProducts) ? data.storedProducts.map(enrichProduct) : [],
+    status: data.status,
+  };
+}
+
+export async function getAmazonApiStatus(countryCode = DEFAULT_COUNTRY) {
+  return callPaapi({ action: 'status', countryCode }).then((result) => result.status);
+}
+
+export async function fetchStoredProducts(countryCode = DEFAULT_COUNTRY) {
+  const { products } = await callPaapi({ action: 'list', countryCode });
+  return saveProducts(products);
+}
+
+export async function persistStoredProducts(products, countryCode = DEFAULT_COUNTRY) {
+  const result = await callPaapi({ action: 'store', products, countryCode });
+  const saved = result.products.length ? result.products : result.storedProducts;
+  return saveProducts(saved.length ? saved : products);
 }
 
 export async function searchAmazonProducts(keywords, countryCode = DEFAULT_COUNTRY) {
   if (!keywords.trim()) return [];
-  try {
-    return await callPaapi({ action: 'search', keywords, countryCode });
-  } catch {
-    return [placeholderProduct(keywords, countryCode)];
-  }
+  const { products } = await callPaapi({ action: 'search', keywords, countryCode });
+  return products;
 }
 
 export async function importAsins(input, countryCode = DEFAULT_COUNTRY) {
-  const asins = extractAsinsFromLines(input);
+  const asins = Array.isArray(input) ? input.map(extractAsin).filter(Boolean) : extractAsinsFromLines(input);
   if (!asins.length) return [];
-  try {
-    return await callPaapi({ action: 'asins', asins, countryCode });
-  } catch {
-    return asins.map((asin) => placeholderProduct(asin, countryCode));
-  }
+  const { products } = await callPaapi({ action: 'asins', asins, countryCode });
+  return products;
 }
 
 export async function importAmazonUrl(url, countryCode = DEFAULT_COUNTRY) {
   const asin = extractAsin(url);
   if (!asin) throw new Error('Enter a valid Amazon product URL or ASIN.');
-  return importAsins(asin, countryCode);
+  const { products } = await callPaapi({ action: 'url', url, countryCode });
+  return products;
 }
 
 export async function importWishlist(url, countryCode = DEFAULT_COUNTRY) {
   const wishlistId = extractWishlistId(url);
   if (!wishlistId) throw new Error('Enter a valid public Amazon wishlist URL. Example: https://www.amazon.in/hz/wishlist/ls/J23J5F6XHRWC');
-  return callPaapi({ action: 'wishlist', url, wishlistId, countryCode });
+  const { products } = await callPaapi({ action: 'wishlist', url, wishlistId, countryCode });
+  return products;
 }
 
 export async function importWishlistFallback(input, countryCode = DEFAULT_COUNTRY) {
   const asins = extractAsinsFromLines(input);
   if (!asins.length) throw new Error('Paste Amazon product URLs or ASINs line-by-line for fallback import.');
-  return importAsins(asins.join('\n'), countryCode);
+  return importAsins(asins, countryCode);
 }
 
 export async function refreshProducts(products, countryCode = DEFAULT_COUNTRY, force = false) {
@@ -178,17 +151,11 @@ export async function refreshProducts(products, countryCode = DEFAULT_COUNTRY, f
   const asins = products.map((product) => product.asin).filter(Boolean);
   if (!asins.length) return products.map(enrichProduct);
 
-  try {
-    const refreshed = await callPaapi({ action: 'asins', asins, countryCode });
-    const byAsin = new Map(refreshed.map((product) => [product.asin, product]));
-    const merged = products.map((product) => enrichProduct({ ...product, ...byAsin.get(product.asin) }));
-    storage?.setItem(REFRESH_KEY, String(Date.now()));
-    return saveProducts(merged);
-  } catch {
-    const refreshed = products.map((product) => enrichProduct({ ...product, updatedAt: new Date().toISOString() }));
-    storage?.setItem(REFRESH_KEY, String(Date.now()));
-    return saveProducts(refreshed);
-  }
+  const refreshed = await importAsins(asins, countryCode);
+  const byAsin = new Map(refreshed.map((product) => [product.asin, product]));
+  const merged = products.map((product) => enrichProduct({ ...product, ...byAsin.get(product.asin) }));
+  storage?.setItem(REFRESH_KEY, String(Date.now()));
+  return saveProducts(merged);
 }
 
 export function buildProductMeta(product, countryCode = DEFAULT_COUNTRY) {
@@ -204,7 +171,9 @@ export function buildProductMeta(product, countryCode = DEFAULT_COUNTRY) {
       name: product.name,
       description: product.summary,
       sku: product.asin || product.id,
-      aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount || 100 },
+      brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+      image: product.galleryImages?.length ? product.galleryImages : product.image,
+      aggregateRating: product.rating ? { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount || 0 } : undefined,
       offers: { '@type': 'Offer', url: affiliateUrl, priceCurrency: getCountryConfig(countryCode).currency || 'INR', availability: product.availability || 'https://schema.org/InStock' },
     },
   };
