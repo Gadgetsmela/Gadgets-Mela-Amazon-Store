@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://gadgets-mela.example.com/sitemap.xml
