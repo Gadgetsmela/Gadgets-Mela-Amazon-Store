@@ -1,0 +1,10 @@
+{
+  "name": "Gadgets Mela",
+  "short_name": "GadgetsMela",
+  "description": "Amazon affiliate gadget deals and buying guides.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0f172a",
+  "icons": []
+}

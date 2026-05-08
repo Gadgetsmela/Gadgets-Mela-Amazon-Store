@@ -1,0 +1,2 @@
+Gadgets Mela
+Built with React and Vite for curated Amazon affiliate gadget deals.
