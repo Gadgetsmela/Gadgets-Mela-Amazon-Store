@@ -29,6 +29,10 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
           <strong>{product.rating}</strong>
           <span>Amazon rating sync</span>
         </div>
+        <div className="product-meta-row">
+          <span>{product.availability || 'Check Amazon for availability'}</span>
+          {product.importStatus && <em>{product.importStatus}</em>}
+        </div>
         <div className="price-row">
           <strong>{formatCurrency(price, countryCode)}</strong>
           <span>{formatCurrency(originalPrice, countryCode)}</span>

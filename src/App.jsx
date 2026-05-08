@@ -32,6 +32,7 @@ export default function App() {
   const [products, setProducts] = useState(() => loadProducts());
   const productsRef = useRef(products);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
+  const isWishlistImportPage = typeof window !== 'undefined' && window.location.pathname === '/admin/wishlist-import';
 
   useEffect(() => {
     const loadingTimer = window.setTimeout(() => {
@@ -117,19 +118,25 @@ export default function App() {
         onCountryChange={setSelectedCountry}
       />
       <main>
-        <Hero />
-        <AffiliateDisclosure />
-        <DealStrip products={products} />
-        <TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
-        <CategoryTabs
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-        />
-        <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} onQuickView={setQuickViewProduct} />
-        <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} />
-        <BuyingGuides />
-        <Newsletter />
+        {isWishlistImportPage ? (
+          <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} wishlistOnly />
+        ) : (
+          <>
+            <Hero />
+            <AffiliateDisclosure />
+            <DealStrip products={products} />
+            <TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
+            <CategoryTabs
+              categories={categories}
+              activeCategory={activeCategory}
+              onCategoryChange={setActiveCategory}
+            />
+            <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} onQuickView={setQuickViewProduct} />
+            <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} />
+            <BuyingGuides />
+            <Newsletter />
+          </>
+        )}
       </main>
       <Footer />
       <ProductQuickView product={quickViewProduct} selectedCountry={selectedCountry} onClose={() => setQuickViewProduct(null)} />

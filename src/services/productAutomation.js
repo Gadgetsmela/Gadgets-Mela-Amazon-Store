@@ -36,6 +36,8 @@ export function enrichProduct(product) {
     discountPercent: discount,
     badge: bestDeal ? 'Best Deal' : product.badge || `${discount}% off`,
     bestDeal,
+    availability: product.availability || 'Availability sync pending',
+    importStatus: product.importStatus || 'imported',
     updatedAt: product.updatedAt || new Date().toISOString(),
     trendingScore: product.trendingScore || Math.round((Number(product.rating || 4) * 20) + discount),
   };
@@ -67,8 +69,21 @@ export function saveProducts(products) {
 
 export function extractAsin(input) {
   const value = String(input || '').trim();
-  const asinMatch = value.match(/(?:dp|gp\/product|product)\/([A-Z0-9]{10})|\b([A-Z0-9]{10})\b/i);
-  return asinMatch ? (asinMatch[1] || asinMatch[2]).toUpperCase() : '';
+  const asinMatch = value.match(/(?:dp|gp\/product|product|ASIN)\/([A-Z0-9]{10})|[?&]asin=([A-Z0-9]{10})|\b([A-Z0-9]{10})\b/i);
+  return asinMatch ? (asinMatch[1] || asinMatch[2] || asinMatch[3]).toUpperCase() : '';
+}
+
+export function extractWishlistId(input) {
+  const value = String(input || '').trim();
+  const wishlistMatch = value.match(/(?:wishlist\/ls|\/hz\/wishlist\/ls)\/([A-Z0-9]{10,})|[?&](?:list|wishlistId)=([A-Z0-9]{10,})|\b([A-Z0-9]{10,})\b/i);
+  return wishlistMatch ? (wishlistMatch[1] || wishlistMatch[2] || wishlistMatch[3]).toUpperCase() : '';
+}
+
+export function extractAsinsFromLines(input) {
+  return [...new Set(String(input || '')
+    .split(/[\n,]+/)
+    .map(extractAsin)
+    .filter(Boolean))];
 }
 
 function inferCategory(name) {
@@ -97,6 +112,8 @@ function placeholderProduct(input, countryCode = DEFAULT_COUNTRY) {
     originalPriceCAD: Math.round((original / 61) * 100) / 100,
     rating: 4.3 + ((asin.charCodeAt(1) || 2) % 6) / 10,
     image: '🛒',
+    availability: 'PA API credentials required for live availability',
+    importStatus: 'imported',
     summary: `Imported from Amazon ${getCountryConfig(countryCode).name}; sync again after PA API credentials are configured.`,
     tags: ['amazon', 'imported', asin.toLowerCase()],
     affiliateUrl: withAffiliateTag(`https://${getCountryConfig(countryCode).amazonHost}/dp/${asin}`, countryCode),
@@ -110,9 +127,9 @@ async function callPaapi(payload) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+  const data = await response.json().catch(() => ({}));
 
-  if (!response.ok) throw new Error(`Amazon PA API proxy returned ${response.status}`);
-  const data = await response.json();
+  if (!response.ok) throw new Error(data.error || `Amazon PA API proxy returned ${response.status}`);
   return Array.isArray(data.products) ? data.products.map(enrichProduct) : [];
 }
 
@@ -126,7 +143,7 @@ export async function searchAmazonProducts(keywords, countryCode = DEFAULT_COUNT
 }
 
 export async function importAsins(input, countryCode = DEFAULT_COUNTRY) {
-  const asins = String(input).split(/[\s,]+/).map(extractAsin).filter(Boolean);
+  const asins = extractAsinsFromLines(input);
   if (!asins.length) return [];
   try {
     return await callPaapi({ action: 'asins', asins, countryCode });
@@ -142,11 +159,15 @@ export async function importAmazonUrl(url, countryCode = DEFAULT_COUNTRY) {
 }
 
 export async function importWishlist(url, countryCode = DEFAULT_COUNTRY) {
-  try {
-    return await callPaapi({ action: 'wishlist', url, countryCode });
-  } catch {
-    return ['B0CGX9R9J5', 'B09B8V1LZ3', 'B0B7B9V7H8'].map((asin) => placeholderProduct(asin, countryCode));
-  }
+  const wishlistId = extractWishlistId(url);
+  if (!wishlistId) throw new Error('Enter a valid public Amazon wishlist URL. Example: https://www.amazon.in/hz/wishlist/ls/J23J5F6XHRWC');
+  return callPaapi({ action: 'wishlist', url, wishlistId, countryCode });
+}
+
+export async function importWishlistFallback(input, countryCode = DEFAULT_COUNTRY) {
+  const asins = extractAsinsFromLines(input);
+  if (!asins.length) throw new Error('Paste Amazon product URLs or ASINs line-by-line for fallback import.');
+  return importAsins(asins.join('\n'), countryCode);
 }
 
 export async function refreshProducts(products, countryCode = DEFAULT_COUNTRY, force = false) {
@@ -184,7 +205,7 @@ export function buildProductMeta(product, countryCode = DEFAULT_COUNTRY) {
       description: product.summary,
       sku: product.asin || product.id,
       aggregateRating: { '@type': 'AggregateRating', ratingValue: product.rating, reviewCount: product.reviewCount || 100 },
-      offers: { '@type': 'Offer', url: affiliateUrl, priceCurrency: getCountryConfig(countryCode).currency || 'INR', availability: 'https://schema.org/InStock' },
+      offers: { '@type': 'Offer', url: affiliateUrl, priceCurrency: getCountryConfig(countryCode).currency || 'INR', availability: product.availability || 'https://schema.org/InStock' },
     },
   };
 }
