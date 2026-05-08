@@ -1,6 +1,10 @@
 import { ExternalLink, Star } from 'lucide-react';
+import { site } from '../data/site.js';
+import { withAffiliateTag } from '../utils/affiliate.js';
 
 export default function ProductCard({ product }) {
+  const affiliateUrl = withAffiliateTag(product.affiliateUrl, site.affiliateTag);
+
   return (
     <article className="product-card">
       <div className="product-media">
@@ -20,7 +24,7 @@ export default function ProductCard({ product }) {
           <strong>{product.price}</strong>
           <span>{product.previousPrice}</span>
         </div>
-        <a className="amazon-button" href={product.affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">
+        <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">
           View on Amazon <ExternalLink size={16} />
         </a>
       </div>

@@ -26,7 +26,11 @@ npm run build
 
 ## Affiliate Setup
 
-Update `src/data/products.js` with your Amazon Associates tracking IDs and replace sample URLs with live affiliate product links. Keep the affiliate disclosure visible on every page.
+Set `VITE_AMAZON_ASSOCIATE_TAG` to your Amazon Associates tracking ID. The app applies this tag to every product URL at render time, so Vercel can change the live tracking ID without editing product data.
+
+For Amazon OneLink, link your international Associates accounts in Amazon Associates Central, then keep the primary US tracking ID in `VITE_AMAZON_ASSOCIATE_TAG`. Amazon notes that Associate tags are marketplace-specific and OneLink can redirect international shoppers from US affiliate links when configured in Associates Central.
+
+Update `src/data/products.js` with live Amazon product URLs. Keep the affiliate disclosure visible on every page.
 
 ## Disclaimer
 
