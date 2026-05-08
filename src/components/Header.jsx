@@ -1,6 +1,7 @@
 import { Search, ShoppingBag } from 'lucide-react';
+import { countries } from '../data/countries.js';
 
-export default function Header({ query, onQueryChange }) {
+export default function Header({ query, onQueryChange, selectedCountry, onCountryChange }) {
   return (
     <header className="site-header">
       <a className="brand" href="#top" aria-label="Gadgets Mela home">
@@ -30,10 +31,28 @@ export default function Header({ query, onQueryChange }) {
         />
       </label>
 
-      <a className="header-cta" href="#deals">
-        <ShoppingBag size={18} />
-        Shop deals
-      </a>
+      <div className="header-actions">
+        <label className="country-selector" htmlFor="country-selector">
+          <span>Country</span>
+          <select
+            id="country-selector"
+            value={selectedCountry}
+            onChange={(event) => onCountryChange(event.target.value)}
+            aria-label="Select shopping country and currency"
+          >
+            {countries.map((country) => (
+              <option key={country.code} value={country.code}>
+                {country.name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <a className="header-cta" href="#deals">
+          <ShoppingBag size={18} />
+          Shop deals
+        </a>
+      </div>
     </header>
   );
 }
