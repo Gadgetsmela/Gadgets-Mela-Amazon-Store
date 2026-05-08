@@ -1,9 +1,12 @@
 import { ExternalLink, Star } from 'lucide-react';
-import { site } from '../data/site.js';
+import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { withAffiliateTag } from '../utils/affiliate.js';
+import { formatCurrency, getProductPrices } from '../utils/format.js';
 
-export default function ProductCard({ product }) {
-  const affiliateUrl = withAffiliateTag(product.affiliateUrl, site.affiliateTag);
+export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY }) {
+  const countryCode = selectedCountry || DEFAULT_COUNTRY;
+  const affiliateUrl = withAffiliateTag(product.affiliateUrl, countryCode);
+  const { price, originalPrice } = getProductPrices(product, countryCode);
 
   return (
     <article className="product-card">
@@ -21,8 +24,8 @@ export default function ProductCard({ product }) {
           <span>Amazon rating</span>
         </div>
         <div className="price-row">
-          <strong>{product.price}</strong>
-          <span>{product.previousPrice}</span>
+          <strong>{formatCurrency(price, countryCode)}</strong>
+          <span>{formatCurrency(originalPrice, countryCode)}</span>
         </div>
         <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">
           View on Amazon <ExternalLink size={16} />

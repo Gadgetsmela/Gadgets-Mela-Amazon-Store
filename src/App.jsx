@@ -10,10 +10,12 @@ import Footer from './components/Footer.jsx';
 import AffiliateDisclosure from './components/AffiliateDisclosure.jsx';
 import { products } from './data/products.js';
 import { categories } from './data/categories.js';
+import { DEFAULT_COUNTRY } from './data/countries.js';
 
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [query, setQuery] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState(DEFAULT_COUNTRY);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -50,7 +52,12 @@ export default function App() {
           <span>Powering up premium gadget deals...</span>
         </div>
       )}
-      <Header query={query} onQueryChange={setQuery} />
+      <Header
+        query={query}
+        onQueryChange={setQuery}
+        selectedCountry={selectedCountry}
+        onCountryChange={setSelectedCountry}
+      />
       <main>
         <Hero />
         <AffiliateDisclosure />
@@ -60,7 +67,7 @@ export default function App() {
           activeCategory={activeCategory}
           onCategoryChange={setActiveCategory}
         />
-        <ProductGrid products={filteredProducts} />
+        <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} />
         <BuyingGuides />
         <Newsletter />
       </main>
