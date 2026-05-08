@@ -4,7 +4,20 @@
   "description": "Amazon affiliate gadget deals and buying guides.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#0f172a",
+  "background_color": "#020617",
   "theme_color": "#0f172a",
-  "icons": []
+  "icons": [
+    {
+      "src": "/brand/gadgets-mela-circle.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/gm-icon.svg",
+      "sizes": "128x128",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
 }

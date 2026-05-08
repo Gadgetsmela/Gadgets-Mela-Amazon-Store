@@ -1,14 +1,23 @@
-import { Search, ShoppingBag, Sparkles } from 'lucide-react';
+import { Search, ShoppingBag } from 'lucide-react';
 
 export default function Header({ query, onQueryChange }) {
   return (
     <header className="site-header">
       <a className="brand" href="#top" aria-label="Gadgets Mela home">
-        <span className="brand-mark"><Sparkles size={22} /></span>
-        <span>
-          <strong>Gadgets Mela</strong>
-          <small>Amazon Affiliate Store</small>
-        </span>
+        <img
+          className="brand-logo brand-logo-full"
+          src="/brand/gadgets-mela-logo.svg"
+          alt="GADGETS MELA"
+          width="260"
+          height="64"
+        />
+        <img
+          className="brand-logo brand-logo-mobile"
+          src="/brand/gm-icon.svg"
+          alt="GADGETS MELA"
+          width="52"
+          height="52"
+        />
       </a>
 
       <label className="search-box" htmlFor="product-search">
