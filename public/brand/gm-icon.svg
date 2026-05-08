@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">GM icon</title>
+  <desc id="desc">Gadgets Mela GM symbol for compact branding.</desc>
+  <defs>
+    <linearGradient id="panel" x1="12" x2="116" y1="12" y2="116" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#111827"/>
+      <stop offset="0.58" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#431407"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="24" x2="106" y1="22" y2="104" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fed7aa"/>
+      <stop offset="0.45" stop-color="#fb923c"/>
+      <stop offset="1" stop-color="#ea580c"/>
+    </linearGradient>
+  </defs>
+  <rect x="6" y="6" width="116" height="116" rx="32" fill="url(#panel)"/>
+  <rect x="6" y="6" width="116" height="116" rx="32" fill="none" stroke="#fb923c" stroke-opacity="0.5" stroke-width="4"/>
+  <path d="M33 74V42h34v11H47v10h18.5v11H33Z" fill="#ffffff"/>
+  <path d="M72 85V42h12.7l9.6 16.2L103.9 42H117v43h-14.3V63.6L92.4 80h-4.1L78 63.6V85H72Z" fill="url(#accent)"/>
+  <path d="M27 96h77" stroke="#fb923c" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="38" cy="96" r="6" fill="#111827" stroke="#fed7aa" stroke-width="3"/>
+  <circle cx="94" cy="96" r="6" fill="#111827" stroke="#fed7aa" stroke-width="3"/>
+</svg>

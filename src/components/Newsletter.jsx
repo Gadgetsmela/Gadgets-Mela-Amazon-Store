@@ -2,7 +2,7 @@ import { Mail } from 'lucide-react';
 
 export default function Newsletter() {
   return (
-    <section className="newsletter" aria-labelledby="newsletter-title">
+    <section className="newsletter" id="newsletter" aria-labelledby="newsletter-title">
       <div>
         <p className="eyebrow">Never miss a useful deal</p>
         <h2 id="newsletter-title">Get weekly gadget picks in your inbox.</h2>

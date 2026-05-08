@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Header from './components/Header.jsx';
 import Hero from './components/Hero.jsx';
 import CategoryTabs from './components/CategoryTabs.jsx';
@@ -14,6 +14,15 @@ import { categories } from './data/categories.js';
 export default function App() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [query, setQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadingTimer = window.setTimeout(() => {
+      setIsLoading(false);
+    }, 850);
+
+    return () => window.clearTimeout(loadingTimer);
+  }, []);
 
   const filteredProducts = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -32,6 +41,15 @@ export default function App() {
 
   return (
     <div className="app-shell">
+      {isLoading && (
+        <div className="brand-loader" role="status" aria-label="Loading Gadgets Mela store">
+          <div className="brand-loader-ring">
+            <img src="/brand/gm-icon.svg" alt="" width="88" height="88" aria-hidden="true" />
+          </div>
+          <strong>GADGETS MELA</strong>
+          <span>Powering up premium gadget deals...</span>
+        </div>
+      )}
       <Header query={query} onQueryChange={setQuery} />
       <main>
         <Hero />
