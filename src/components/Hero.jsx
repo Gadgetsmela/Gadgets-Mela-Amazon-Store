@@ -1,8 +1,9 @@
-import { ArrowRight, ShieldCheck, Star, Zap } from 'lucide-react';
+import { ArrowRight, Database, ShieldCheck, Star, Zap } from 'lucide-react';
 
 const highlights = [
-  { icon: Star, label: 'Curated 4★+ gadgets' },
-  { icon: Zap, label: 'Fast deal discovery' },
+  { icon: Star, label: 'Live 4★+ Amazon gadgets' },
+  { icon: Zap, label: 'PA API product automation' },
+  { icon: Database, label: 'Database-backed imports' },
   { icon: ShieldCheck, label: 'Clear affiliate disclosure' },
 ];
 
@@ -10,16 +11,16 @@ export default function Hero() {
   return (
     <section className="hero" id="top">
       <div className="hero-copy">
-        <p className="eyebrow">Daily gadget finds for smart shoppers</p>
-        <h1>Discover Amazon tech deals without endless scrolling.</h1>
+        <p className="eyebrow">Automated Amazon affiliate platform</p>
+        <h1>Discover live tech deals without endless scrolling.</h1>
         <p className="hero-text">
-          Gadgets Mela curates useful electronics, mobile accessories, smart home upgrades, and creator desk gear so you can buy with confidence.
+          Gadgets Mela now imports Amazon products by PA API search, ASIN, wishlist, or URL; syncs prices and ratings daily; and generates affiliate-ready deal pages for mobile-first shoppers.
         </p>
         <div className="hero-actions">
           <a className="primary-button" href="#deals">
             Explore top picks <ArrowRight size={18} />
           </a>
-          <a className="secondary-button" href="#guides">Read buying guides</a>
+          <a className="secondary-button" href="#admin">Open admin automation</a>
         </div>
         <div className="hero-highlights" aria-label="Store highlights">
           {highlights.map(({ icon: Icon, label }) => (
@@ -28,15 +29,15 @@ export default function Hero() {
         </div>
       </div>
       <div className="hero-card" aria-label="Featured gadget bundle">
-        <div className="floating-badge">Festival Tech Picks</div>
+        <div className="floating-badge">Best Deal Engine</div>
         <div className="gadget-stack">
           <span>🎧</span>
           <span>📱</span>
-          <span>⌚</span>
-          <span>🔋</span>
+          <span>🎮</span>
+          <span>🏠</span>
         </div>
-        <h2>Starter Smart Kit</h2>
-        <p>Speaker + charger + tracker + headphones</p>
+        <h2>Daily Auto Sync</h2>
+        <p>Prices + ratings + discounts + badges</p>
         <strong>Save up to 35%</strong>
       </div>
     </section>

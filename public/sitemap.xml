@@ -3,5 +3,21 @@
   <url>
     <loc>https://gadgets-mela.example.com/</loc>
     <priority>1.0</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://gadgets-mela.example.com/#deals</loc>
+    <priority>0.9</priority>
+    <changefreq>daily</changefreq>
+  </url>
+  <url>
+    <loc>https://gadgets-mela.example.com/#admin</loc>
+    <priority>0.4</priority>
+    <changefreq>weekly</changefreq>
+  </url>
+  <url>
+    <loc>https://gadgets-mela.example.com/#guides</loc>
+    <priority>0.7</priority>
+    <changefreq>weekly</changefreq>
   </url>
 </urlset>

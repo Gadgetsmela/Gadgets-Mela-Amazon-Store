@@ -52,6 +52,9 @@ export default function Header({ query, onQueryChange, selectedCountry, onCountr
           <ShoppingBag size={18} />
           Shop deals
         </a>
+        <a className="header-cta ghost-cta" href="#admin">
+          Admin
+        </a>
       </div>
     </header>
   );

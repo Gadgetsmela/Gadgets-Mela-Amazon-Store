@@ -1,15 +1,19 @@
 # Gadgets Mela Amazon Affiliate Store
 
-A polished React + Vite storefront for an Amazon affiliate gadget curation brand. The app highlights product categories, deal cards, editorial buying guides, affiliate disclosure messaging, and newsletter capture UI.
+A polished React + Vite storefront for an automated Amazon affiliate gadget curation brand. The app highlights product categories, live deal cards, editorial buying guides, affiliate disclosure messaging, newsletter capture UI, and an admin automation dashboard.
 
 ## Features
 
-- Responsive marketplace landing page for gadget shoppers
-- Amazon affiliate-ready product cards and CTA links
-- Category filtering, search, and featured deal sections
-- Buying guide content for trust-building SEO pages
-- Affiliate disclosure and privacy-friendly static front end
-- Lightweight Vite build suitable for Netlify, Vercel, or GitHub Pages
+- Premium dark, mobile-first Amazon affiliate storefront
+- Real Amazon Product Advertising API proxy for keyword search and ASIN refresh
+- Admin dashboard for PA API search, ASIN import, wishlist import, Amazon URL import, and manual products
+- Local product database persistence with daily auto-refresh scheduling
+- Dynamic live prices, rating sync, discount percentage calculation, and automatic “Best Deal” badges
+- Trending products section ranked from rating and discount signals
+- Categories: Mobile, Audio, Gaming, Smart Home, Accessories, and Creator Setup
+- Loading skeleton UI, product quick-view popup, WhatsApp share, and Telegram share
+- SEO-ready product meta tags plus JSON-LD Product structured data
+- Google indexing foundations through `robots.txt`, `sitemap.xml`, canonical tags, and schema output
 
 ## Getting Started
 
@@ -24,13 +28,27 @@ npm run dev
 npm run build
 ```
 
+## Amazon PA API Setup
+
+The browser app calls a secure serverless proxy at `/api/amazon` by default. Configure these environment variables in Vercel or your hosting platform so live Product Advertising API requests can be signed server-side:
+
+```bash
+AMAZON_PAAPI_ACCESS_KEY=your_paapi_access_key
+AMAZON_PAAPI_SECRET_KEY=your_paapi_secret_key
+AMAZON_ASSOCIATE_TAG=default_associate_tag
+AMAZON_ASSOCIATE_TAG_IN=india_tag
+AMAZON_ASSOCIATE_TAG_US=us_tag
+AMAZON_ASSOCIATE_TAG_GB=uk_tag
+AMAZON_ASSOCIATE_TAG_CA=canada_tag
+```
+
+If you deploy the proxy somewhere else, set `VITE_AMAZON_PAAPI_ENDPOINT` to that URL. When credentials are missing, the admin dashboard keeps working with safe placeholder imports so the UI can be tested without exposing secrets.
+
 ## Affiliate Setup
 
-Set `VITE_AMAZON_ASSOCIATE_TAG` to your Amazon Associates tracking ID. The app applies this tag to every product URL at render time, so Vercel can change the live tracking ID without editing product data.
+Associate tags are marketplace-specific. Update `src/data/countries.js` with your Amazon Associates tracking IDs and marketplace hosts. The app applies the selected country tag to every product URL at render time.
 
-For Amazon OneLink, link your international Associates accounts in Amazon Associates Central, then keep the primary US tracking ID in `VITE_AMAZON_ASSOCIATE_TAG`. Amazon notes that Associate tags are marketplace-specific and OneLink can redirect international shoppers from US affiliate links when configured in Associates Central.
-
-Update `src/data/products.js` with live Amazon product URLs. Keep the affiliate disclosure visible on every page.
+Keep the affiliate disclosure visible on every page and update `src/data/products.js` with starter ASINs or use the admin dashboard to import Amazon products.
 
 ## Disclaimer
 

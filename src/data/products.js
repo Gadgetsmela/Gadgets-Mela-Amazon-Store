@@ -1,6 +1,7 @@
 export const products = [
   {
     id: 1,
+    asin: 'B09B8V1LZ3',
     name: 'Echo Dot Smart Speaker Bundle',
     category: 'Smart Home',
     priceINR: 2499,
@@ -20,6 +21,7 @@ export const products = [
   },
   {
     id: 2,
+    asin: 'B0B7B9V7H8',
     name: 'MagSafe 3-in-1 Charging Stand',
     category: 'Mobile',
     priceINR: 999,
@@ -39,6 +41,7 @@ export const products = [
   },
   {
     id: 3,
+    asin: 'B0C7XJ8C4Q',
     name: 'Noise-Canceling Bluetooth Headphones',
     category: 'Audio',
     priceINR: 1999,
@@ -58,8 +61,9 @@ export const products = [
   },
   {
     id: 4,
+    asin: 'B0B3C7S9TP',
     name: 'USB-C 12-in-1 Docking Station',
-    category: 'Work Setup',
+    category: 'Creator Setup',
     priceINR: 3499,
     originalPriceINR: 4999,
     priceUSD: 89.99,
@@ -77,8 +81,9 @@ export const products = [
   },
   {
     id: 5,
+    asin: 'B08HV83HL3',
     name: 'Portable Power Bank 20,000mAh',
-    category: 'Travel Tech',
+    category: 'Accessories',
     priceINR: 1799,
     originalPriceINR: 2499,
     priceUSD: 42.99,
@@ -96,6 +101,7 @@ export const products = [
   },
   {
     id: 6,
+    asin: 'B07YMHGP86',
     name: 'RGB Mechanical Gaming Keyboard',
     category: 'Gaming',
     priceINR: 2299,
@@ -115,6 +121,7 @@ export const products = [
   },
   {
     id: 7,
+    asin: 'B089DR29T6',
     name: 'Wi-Fi Smart Plug 4-Pack',
     category: 'Smart Home',
     priceINR: 899,
@@ -134,8 +141,9 @@ export const products = [
   },
   {
     id: 8,
+    asin: 'B09B8RF4PY',
     name: 'Mini Bluetooth Tracker Tags',
-    category: 'Travel Tech',
+    category: 'Accessories',
     priceINR: 1199,
     originalPriceINR: 1699,
     priceUSD: 29.99,
