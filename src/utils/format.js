@@ -15,7 +15,8 @@ export function formatCurrency(amount, countryCode = DEFAULT_COUNTRY) {
   const selectedCountry = countryCode || DEFAULT_COUNTRY;
   const formatter = currencyFormatters[selectedCountry] || currencyFormatters[DEFAULT_COUNTRY];
 
-  const formattedAmount = formatter.format(amount);
+  const numericAmount = Number(amount || 0);
+  const formattedAmount = formatter.format(numericAmount);
 
   return selectedCountry === 'CA' ? formattedAmount.replace(/^\$/, 'C$') : formattedAmount;
 }

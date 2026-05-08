@@ -8,26 +8,27 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
   const affiliateUrl = withAffiliateTag(product.affiliateUrl, countryCode);
   const { price, originalPrice } = getProductPrices(product, countryCode);
   const shareText = encodeURIComponent(`Gadgets Mela deal: ${product.name} ${affiliateUrl}`);
+  const primaryImage = product.image || product.galleryImages?.[0];
 
   return (
     <article className="product-card" id={`product-${product.id}`}>
       <div className="product-media">
-        {String(product.image).startsWith('http') ? (
-          <img className="product-photo" src={product.image} alt="" loading="lazy" />
+        {String(primaryImage || '').startsWith('http') ? (
+          <img className="product-photo" src={primaryImage} alt={product.name} loading="lazy" />
         ) : (
-          <span className="product-emoji" role="img" aria-label="Gadget illustration">{product.image}</span>
+          <span className="product-emoji" role="img" aria-label="Amazon gadget">🛒</span>
         )}
         <span className={`product-badge ${product.bestDeal ? 'best-deal' : ''}`}>{product.badge}</span>
         {product.trendingScore >= 110 && <span className="trend-badge"><TrendingUp size={14} /> Trending</span>}
       </div>
       <div className="product-body">
-        <p className="product-category">{product.category}</p>
+        <p className="product-category">{product.brand ? `${product.brand} · ` : ''}{product.category}</p>
         <h3>{product.name}</h3>
         <p>{product.summary}</p>
-        <div className="rating" aria-label={`${product.rating} out of 5 stars`}>
+        <div className="rating" aria-label={`${product.rating || 'No'} out of 5 stars`}>
           <Star size={16} fill="currentColor" />
-          <strong>{product.rating}</strong>
-          <span>Amazon rating sync</span>
+          <strong>{product.rating || '—'}</strong>
+          <span>{product.reviewCount ? `${product.reviewCount.toLocaleString()} reviews` : 'Amazon rating sync'}</span>
         </div>
         <div className="product-meta-row">
           <span>{product.availability || 'Check Amazon for availability'}</span>
@@ -35,8 +36,8 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
         </div>
         <div className="price-row">
           <strong>{formatCurrency(price, countryCode)}</strong>
-          <span>{formatCurrency(originalPrice, countryCode)}</span>
-          <em>{product.discountPercent}% off</em>
+          {originalPrice > price && <span>{formatCurrency(originalPrice, countryCode)}</span>}
+          <em>{product.discountPercent || 0}% off</em>
         </div>
         <div className="card-actions">
           <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">

@@ -9,6 +9,8 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
   const affiliateUrl = withAffiliateTag(product.affiliateUrl, selectedCountry);
   const { price, originalPrice } = getProductPrices(product, selectedCountry);
   const shareText = encodeURIComponent(`Check this Gadgets Mela Amazon deal: ${product.name} ${affiliateUrl}`);
+  const galleryImages = product.galleryImages?.length ? product.galleryImages : [product.image].filter(Boolean);
+  const primaryImage = galleryImages[0];
 
   return (
     <div className="quick-view-backdrop" role="presentation" onClick={onClose}>
@@ -17,22 +19,31 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
           <X size={20} />
         </button>
         <div className="quick-view-media">
-          {String(product.image).startsWith('http') ? <img src={product.image} alt="" /> : <span>{product.image}</span>}
+          {String(primaryImage || '').startsWith('http') ? <img src={primaryImage} alt={product.name} /> : <span>🛒</span>}
           {product.bestDeal && <strong>Best Deal</strong>}
+          {galleryImages.length > 1 && (
+            <div className="gallery-strip" aria-label="Amazon gallery images">
+              {galleryImages.slice(0, 5).map((image) => <img key={image} src={image} alt="" loading="lazy" />)}
+            </div>
+          )}
         </div>
         <div className="quick-view-copy">
-          <p className="product-category">{product.category}</p>
+          <p className="product-category">{product.brand ? `${product.brand} · ` : ''}{product.category}</p>
           <h2 id="quick-view-title">{product.name}</h2>
           <p>{product.summary}</p>
-          <div className="rating" aria-label={`${product.rating} out of 5 stars`}>
+          <div className="rating" aria-label={`${product.rating || 'No'} out of 5 stars`}>
             <Star size={16} fill="currentColor" />
-            <strong>{product.rating}</strong>
-            <span>{product.reviewCount || 'Live'} Amazon reviews</span>
+            <strong>{product.rating || '—'}</strong>
+            <span>{product.reviewCount ? `${product.reviewCount.toLocaleString()} Amazon reviews` : 'Live Amazon reviews'}</span>
+          </div>
+          <div className="product-meta-row">
+            <span>{product.availability}</span>
+            {product.amazonCategory && <em>{product.amazonCategory}</em>}
           </div>
           <div className="price-row">
             <strong>{formatCurrency(price, selectedCountry)}</strong>
-            <span>{formatCurrency(originalPrice, selectedCountry)}</span>
-            <em>{product.discountPercent}% off</em>
+            {originalPrice > price && <span>{formatCurrency(originalPrice, selectedCountry)}</span>}
+            <em>{product.discountPercent || 0}% off</em>
           </div>
           <div className="quick-actions">
             <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">
