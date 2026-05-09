@@ -16,6 +16,7 @@ import {
   searchAmazonProducts,
 } from '../services/productAutomation.js';
 import { createCampaignPlan, exportSubscribersCsv, getEmailMarketingStats } from '../services/dealMarketing.js';
+import { getWhatsAppSettings, saveWhatsAppSettings } from '../utils/whatsapp.js';
 
 const importStatusCopy = {
   pending: 'Pending',
@@ -94,6 +95,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCheckingApi, setIsCheckingApi] = useState(true);
   const [marketingStats, setMarketingStats] = useState(() => getEmailMarketingStats(products));
+  const [whatsAppSettings, setWhatsAppSettings] = useState(() => getWhatsAppSettings());
 
   const wishlistId = useMemo(() => extractWishlistId(wishlistUrl), [wishlistUrl]);
   const fallbackAsins = useMemo(() => extractAsinsFromLines(fallbackInput), [fallbackInput]);
@@ -120,6 +122,15 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
       window.removeEventListener('storage', refreshStats);
     };
   }, [products]);
+
+
+  function saveWhatsAppAdminSettings(event) {
+    event.preventDefault();
+    const nextSettings = saveWhatsAppSettings(whatsAppSettings);
+    setWhatsAppSettings(nextSettings);
+    setImportStatus('imported');
+    setStatus('WhatsApp conversion settings saved. Buttons and floating CTA now use the latest admin configuration.');
+  }
 
   function downloadSubscriberCsv() {
     const blob = new globalThis.Blob([exportSubscribersCsv()], { type: 'text/csv;charset=utf-8' });
@@ -352,6 +363,19 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
               <button type="submit">Save static product card</button>
             </form>
 
+            <form className="whatsapp-settings-form" onSubmit={saveWhatsAppAdminSettings}>
+              <h3><BarChart3 size={18} /> WhatsApp conversion settings</h3>
+              <p className="admin-help">Configure the number, group/channel destination, default viral message template, and mobile floating CTA without exposing any secret keys.</p>
+              <div className="editor-grid">
+                <input value={whatsAppSettings.whatsappNumber} onChange={(event) => setWhatsAppSettings({ ...whatsAppSettings, whatsappNumber: event.target.value })} placeholder="WhatsApp number with country code" />
+                <input value={whatsAppSettings.whatsappGroupLink} onChange={(event) => setWhatsAppSettings({ ...whatsAppSettings, whatsappGroupLink: event.target.value })} placeholder="WhatsApp group invite link" />
+                <input value={whatsAppSettings.whatsappChannelLink} onChange={(event) => setWhatsAppSettings({ ...whatsAppSettings, whatsappChannelLink: event.target.value })} placeholder="WhatsApp channel link" />
+                <label className="checkbox-row"><input type="checkbox" checked={whatsAppSettings.floatingCtaEnabled} onChange={(event) => setWhatsAppSettings({ ...whatsAppSettings, floatingCtaEnabled: event.target.checked })} /> Enable floating CTA</label>
+              </div>
+              <textarea value={whatsAppSettings.defaultShareTemplate} onChange={(event) => setWhatsAppSettings({ ...whatsAppSettings, defaultShareTemplate: event.target.value })} placeholder="Default share message template" />
+              <small>Template tokens: {'{{title}}'}, {'{{price}}'}, {'{{discount}}'}, {'{{affiliateLink}}'}, {'{{storeLink}}'}</small>
+              <button type="submit">Save WhatsApp settings</button>
+            </form>
 
             <div className="automation-card email-command-center">
               <h3><MailCheck size={18} /> Deal alert automation</h3>
@@ -367,13 +391,21 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
 
             <div className="automation-card email-command-center">
               <h3><BarChart3 size={18} /> Email + affiliate analytics</h3>
-              <p>Tracks popup impressions, subscribe conversion rate, email clicks, affiliate clicks, and the top clicked product cards without blocking Core Web Vitals.</p>
+              <p>Tracks WhatsApp button clicks, shared product count, top shared products, country-wise WhatsApp clicks, source attribution, email clicks, affiliate clicks, and top clicked product cards without blocking Core Web Vitals.</p>
               <div className="analytics-list">
                 <span>Popup impressions <strong>{marketingStats.analytics.popupImpressions}</strong></span>
                 <span>Exit intent impressions <strong>{marketingStats.analytics.exitIntentImpressions}</strong></span>
                 <span>Email clicks <strong>{marketingStats.analytics.emailClicks}</strong></span>
                 <span>Affiliate clicks <strong>{marketingStats.analytics.affiliateClicks}</strong></span>
+                <span>WhatsApp clicks <strong>{marketingStats.analytics.whatsappClicks}</strong></span>
+                <span>Products shared <strong>{Object.values(marketingStats.analytics.productShares || {}).reduce((total, count) => total + count, 0)}</strong></span>
               </div>
+              <h4>Country-wise WhatsApp clicks</h4>
+              {Object.entries(marketingStats.analytics.countryWhatsAppClicks || {}).length ? Object.entries(marketingStats.analytics.countryWhatsAppClicks || {}).map(([country, clicks]) => <span className="clicked-product" key={country}>{country}<strong>{clicks}</strong></span>) : <p className="admin-help">Country clicks appear after WhatsApp shares.</p>}
+              <h4>WhatsApp source attribution</h4>
+              {Object.entries(marketingStats.analytics.whatsappSourceClicks || {}).length ? Object.entries(marketingStats.analytics.whatsappSourceClicks || {}).map(([source, clicks]) => <span className="clicked-product" key={source}>{source}<strong>{clicks}</strong></span>) : <p className="admin-help">Source attribution appears after card, quick view, product page, trending, or floating CTA clicks.</p>}
+              <h4>Top shared products</h4>
+              {marketingStats.topSharedProducts.length ? marketingStats.topSharedProducts.map(({ product, productId, shares }) => <span className="clicked-product" key={productId}>{product?.name || productId}<strong>{shares}</strong></span>) : <p className="admin-help">Shares will appear after shoppers use WhatsApp CTA buttons.</p>}
               <h4>Top clicked products</h4>
               {marketingStats.topClickedProducts.length ? marketingStats.topClickedProducts.map(({ product, productId, clicks }) => <span className="clicked-product" key={productId}>{product?.name || productId}<strong>{clicks}</strong></span>) : <p className="admin-help">Clicks will appear after shoppers use Amazon CTA buttons.</p>}
             </div>

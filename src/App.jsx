@@ -12,6 +12,8 @@ import AdminDashboard from './components/AdminDashboard.jsx';
 import ProductQuickView from './components/ProductQuickView.jsx';
 import TrendingProducts from './components/TrendingProducts.jsx';
 import DealAlertCapture from './components/DealAlertCapture.jsx';
+import FloatingWhatsAppCTA from './components/FloatingWhatsAppCTA.jsx';
+import WhatsAppChannelCTA from './components/WhatsAppChannelCTA.jsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
@@ -161,6 +163,7 @@ export default function App() {
             <Hero />
             <AffiliateDisclosure />
             <DealStrip products={products} />
+            <WhatsAppChannelCTA selectedCountry={selectedCountry} />
             <TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
             <CategoryTabs
               categories={categories}
@@ -176,6 +179,7 @@ export default function App() {
       </main>
       <Footer />
       {!isWishlistImportPage && <DealAlertCapture selectedCountry={selectedCountry} />}
+      {!isWishlistImportPage && <FloatingWhatsAppCTA selectedCountry={selectedCountry} />}
       <ProductQuickView product={quickViewProduct} selectedCountry={selectedCountry} onClose={() => setQuickViewProduct(null)} />
     </div>
   );
