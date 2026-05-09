@@ -15,6 +15,10 @@ import DealEngineSections from './components/DealEngineSections.jsx';
 import DealAlertCapture from './components/DealAlertCapture.jsx';
 import FloatingWhatsAppCTA from './components/FloatingWhatsAppCTA.jsx';
 import WhatsAppChannelCTA from './components/WhatsAppChannelCTA.jsx';
+import BottomNav from './components/mobile/BottomNav.tsx';
+import PWAInstallPrompt from './components/pwa/PWAInstallPrompt.tsx';
+import SwipeDeals from './components/mobile/SwipeDeals.tsx';
+import FloatingDealAlert from './components/alerts/FloatingDealAlert.tsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
@@ -167,24 +171,27 @@ export default function App() {
         selectedCountry={selectedCountry}
         onCountryChange={setSelectedCountry}
       />
-      <main>
+      <main className="page-transition">
         {isWishlistImportPage || isContentPlannerPage ? (
           <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} wishlistOnly={isWishlistImportPage} contentPlannerOnly={isContentPlannerPage} onRunDealEngine={handleRunDealEngine} />
         ) : (
           <>
-            <Hero />
+            <section id="home" className="home-anchor"><Hero /></section>
             <AffiliateDisclosure />
             <DealStrip products={products} />
+            <SwipeDeals products={filteredProducts} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
             <WhatsAppChannelCTA selectedCountry={selectedCountry} />
-            <TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
+            <section id="trending" className="nav-anchor-section"><TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} /></section>
             <DealEngineSections sections={dealEngineSections} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
-            <CategoryTabs
-              categories={categories}
-              activeCategory={activeCategory}
-              onCategoryChange={setActiveCategory}
-            />
+            <section id="categories" className="nav-anchor-section">
+              <CategoryTabs
+                categories={categories}
+                activeCategory={activeCategory}
+                onCategoryChange={setActiveCategory}
+              />
+            </section>
             <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} error={productError} onQuickView={setQuickViewProduct} />
-            <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} onRunDealEngine={handleRunDealEngine} />
+            <section id="admin" className="nav-anchor-section"><AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} onRunDealEngine={handleRunDealEngine} /></section>
             <BuyingGuides />
             <Newsletter />
           </>
@@ -192,7 +199,10 @@ export default function App() {
       </main>
       <Footer />
       {!isWishlistImportPage && <DealAlertCapture selectedCountry={selectedCountry} />}
+      {!isWishlistImportPage && <FloatingDealAlert products={filteredProducts} onOpenProduct={setQuickViewProduct} />}
       {!isWishlistImportPage && <FloatingWhatsAppCTA selectedCountry={selectedCountry} />}
+      {!isWishlistImportPage && !isContentPlannerPage && <PWAInstallPrompt />}
+      {!isWishlistImportPage && !isContentPlannerPage && <BottomNav />}
       <ProductQuickView product={quickViewProduct} selectedCountry={selectedCountry} onClose={() => setQuickViewProduct(null)} />
     </div>
   );
