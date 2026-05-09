@@ -10,6 +10,8 @@ export function withAffiliateTag(url, countryCode = DEFAULT_COUNTRY) {
   const fallbackUrl = `https://${country.amazonHost}`;
   const parsedUrl = new globalThis.URL(url || fallbackUrl, fallbackUrl);
 
+  if (parsedUrl.hostname.replace(/^www\./i, '').toLowerCase() === 'amzn.to') return parsedUrl.toString();
+
   parsedUrl.hostname = country.amazonHost;
   parsedUrl.searchParams.set('tag', country.affiliateTag);
 
