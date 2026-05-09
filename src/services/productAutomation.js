@@ -2,6 +2,7 @@ import { products as staticProducts } from '../data/products.js';
 import { DEFAULT_COUNTRY, getCountryConfig } from '../data/countries.js';
 import { buildAmazonProductUrl, getAffiliateUrl } from '../utils/affiliate.js';
 import { getProductPrices } from '../utils/format.js';
+import { normalizeProductImages } from '../utils/productImages.js';
 
 const STORAGE_KEY = 'gadgets-mela-products-v4';
 const REFRESH_KEY = 'gadgets-mela-last-refresh';
@@ -41,6 +42,8 @@ export function enrichProduct(product) {
   const bestDeal = product.bestDeal || deriveBestDeal(product);
   const fallbackName = asin ? `Amazon product ${asin}` : 'Affiliate product';
 
+  const images = normalizeProductImages({ ...product, id, asin, name: product.name || product.title || fallbackName });
+
   return {
     ...product,
     id,
@@ -49,7 +52,11 @@ export function enrichProduct(product) {
     category: product.category || 'Gadgets',
     summary: product.summary || 'Curated affiliate product card with manually managed price, MRP, badge, and marketplace redirect.',
     tags: Array.isArray(product.tags) ? product.tags : ['amazon', asin.toLowerCase()].filter(Boolean),
-    galleryImages: Array.isArray(product.galleryImages) ? product.galleryImages : [product.image].filter(Boolean),
+    image: images.image,
+    galleryImages: images.galleryImages,
+    thumbnail: images.thumbnail,
+    placeholder: images.placeholder,
+    imageRatio: images.imageRatio,
     affiliateUrl: product.affiliateUrl || (asin ? buildAmazonProductUrl(asin) : ''),
     discountPercent: discount,
     badge: product.badge || (bestDeal ? 'Best Deal' : (discount ? `${discount}% off` : 'Editor pick')),
