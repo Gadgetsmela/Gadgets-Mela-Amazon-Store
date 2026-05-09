@@ -1,16 +1,16 @@
-import { ExternalLink, MessageCircle, Send, Star, X } from 'lucide-react';
+import { ExternalLink, Star, X } from 'lucide-react';
 import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
 import { getOptimizedImageSources } from '../utils/productImages.js';
 import { trackMarketingEvent } from '../services/dealMarketing.js';
+import WhatsAppShareActions from './WhatsAppShareActions.jsx';
 
 export default function ProductQuickView({ product, selectedCountry = DEFAULT_COUNTRY, onClose }) {
   if (!product) return null;
 
   const affiliateUrl = getAffiliateUrl(product, selectedCountry);
   const { price, originalPrice } = getProductPrices(product, selectedCountry);
-  const shareText = encodeURIComponent(`Check this Gadgets Mela Amazon deal: ${product.name} ${affiliateUrl}`);
   const imageSources = getOptimizedImageSources(product);
   const galleryImages = imageSources.galleryImages;
   const primaryImage = galleryImages[0] || imageSources.src;
@@ -52,13 +52,8 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
             <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener" onClick={() => { trackMarketingEvent('affiliateClick', { productId: product.id }); trackMarketingEvent('productClick', { productId: product.id }); }}>
               Buy on Amazon <ExternalLink size={16} />
             </a>
-            <a className="share-button" href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noreferrer noopener">
-              <MessageCircle size={16} /> WhatsApp
-            </a>
-            <a className="share-button" href={`https://t.me/share/url?url=${encodeURIComponent(affiliateUrl)}&text=${shareText}`} target="_blank" rel="noreferrer noopener">
-              <Send size={16} /> Telegram
-            </a>
           </div>
+          <WhatsAppShareActions product={product} selectedCountry={selectedCountry} source="quick-view" />
         </div>
       </article>
     </div>

@@ -20,6 +20,10 @@ const defaultAnalytics = {
   affiliateClicks: 0,
   opens: 0,
   productClicks: {},
+  whatsappClicks: 0,
+  productShares: {},
+  countryWhatsAppClicks: {},
+  whatsappSourceClicks: {},
 };
 
 function readJson(key, fallback) {
@@ -65,6 +69,19 @@ export function trackMarketingEvent(eventName, payload = {}) {
 
   if (eventName === 'productClick' && payload.productId) {
     next.productClicks = { ...next.productClicks, [payload.productId]: (next.productClicks?.[payload.productId] || 0) + 1 };
+  }
+
+  if (eventName === 'whatsappClick') {
+    next.whatsappClicks = (next.whatsappClicks || 0) + 1;
+    if (payload.productId) {
+      next.productShares = { ...next.productShares, [payload.productId]: (next.productShares?.[payload.productId] || 0) + 1 };
+    }
+    if (payload.country) {
+      next.countryWhatsAppClicks = { ...next.countryWhatsAppClicks, [payload.country]: (next.countryWhatsAppClicks?.[payload.country] || 0) + 1 };
+    }
+    if (payload.source) {
+      next.whatsappSourceClicks = { ...next.whatsappSourceClicks, [payload.source]: (next.whatsappSourceClicks?.[payload.source] || 0) + 1 };
+    }
   }
 
   const counterMap = {
@@ -139,6 +156,10 @@ export function getEmailMarketingStats(products = []) {
     .map(([productId, clicks]) => ({ product: products.find((item) => item.id === productId), productId, clicks }))
     .sort((a, b) => b.clicks - a.clicks)
     .slice(0, 5);
+  const topSharedProducts = Object.entries(analytics.productShares || {})
+    .map(([productId, shares]) => ({ product: products.find((item) => item.id === productId), productId, shares }))
+    .sort((a, b) => b.shares - a.shares)
+    .slice(0, 5);
 
   return {
     totalSubscribers: activeSubscribers.length,
@@ -148,6 +169,7 @@ export function getEmailMarketingStats(products = []) {
     analytics,
     subscribers,
     topClickedProducts,
+    topSharedProducts,
   };
 }
 

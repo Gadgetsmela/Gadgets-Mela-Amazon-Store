@@ -1,18 +1,16 @@
-import { Camera, ExternalLink, Eye, Image as ImageIcon, MessageCircle, Send, Star, TrendingUp } from 'lucide-react';
+import { ExternalLink, Eye, Star, TrendingUp } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
 import { getOptimizedImageSources, getProductImageCandidates, repairAmazonImageUrl } from '../utils/productImages.js';
 import { trackMarketingEvent } from '../services/dealMarketing.js';
+import WhatsAppShareActions from './WhatsAppShareActions.jsx';
 
-export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY, onQuickView, priority = false }) {
+export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY, onQuickView, priority = false, source = 'card' }) {
   const countryCode = selectedCountry || DEFAULT_COUNTRY;
   const affiliateUrl = getAffiliateUrl(product, countryCode);
   const { price, originalPrice } = getProductPrices(product, countryCode);
-  const plainShareText = `Gadgets Mela deal: ${product.name} ${affiliateUrl}`;
-  const shareText = encodeURIComponent(plainShareText);
-  const shareUrl = encodeURIComponent(affiliateUrl);
   const imageSources = useMemo(() => getOptimizedImageSources(product), [product]);
   const imageCandidates = useMemo(() => getProductImageCandidates(product), [product]);
   const [imageIndex, setImageIndex] = useState(0);
@@ -78,12 +76,7 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
             <Eye size={16} /> Quick view
           </button>
         </div>
-        <div className="share-row" aria-label="Share this deal">
-          <a href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noreferrer noopener"><MessageCircle size={15} /> WhatsApp</a>
-          <a href={`https://t.me/share/url?url=${shareUrl}&text=${shareText}`} target="_blank" rel="noreferrer noopener"><Send size={15} /> Telegram</a>
-          <a href={`https://www.pinterest.com/pin/create/button/?url=${shareUrl}&description=${shareText}`} target="_blank" rel="noreferrer noopener"><ImageIcon size={15} /> Pinterest</a>
-          <a href={`https://www.instagram.com/?url=${shareUrl}`} target="_blank" rel="noreferrer noopener"><Camera size={15} /> Reels</a>
-        </div>
+        <WhatsAppShareActions product={product} selectedCountry={countryCode} source={source} />
         <small>Updated {new Date(product.updatedAt).toLocaleDateString()}</small>
       </div>
     </article>

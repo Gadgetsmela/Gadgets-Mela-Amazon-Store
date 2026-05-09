@@ -13,7 +13,7 @@ export default function TrendingProducts({ products, selectedCountry, onQuickVie
       </div>
       <div className="product-grid compact-grid">
         {trending.map((product) => (
-          <ProductCard key={product.id} product={product} selectedCountry={selectedCountry} onQuickView={onQuickView} />
+          <ProductCard key={product.id} product={product} selectedCountry={selectedCountry} onQuickView={onQuickView} source="trending" />
         ))}
       </div>
     </section>
