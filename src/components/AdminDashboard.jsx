@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle2, ClipboardList, Database, Edit3, ImagePlus, Link, RefreshCw, Search, UploadCloud, WifiOff } from 'lucide-react';
+import { AlertTriangle, BarChart3, CheckCircle2, ClipboardList, Database, Download, Edit3, ImagePlus, Link, MailCheck, RefreshCw, Search, UploadCloud, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { categories } from '../data/categories.js';
 import {
@@ -15,6 +15,7 @@ import {
   refreshProducts,
   searchAmazonProducts,
 } from '../services/productAutomation.js';
+import { createCampaignPlan, exportSubscribersCsv, getEmailMarketingStats } from '../services/dealMarketing.js';
 
 const importStatusCopy = {
   pending: 'Pending',
@@ -92,6 +93,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
   const [lastImportSummary, setLastImportSummary] = useState(null);
   const [isSyncing, setIsSyncing] = useState(false);
   const [isCheckingApi, setIsCheckingApi] = useState(true);
+  const [marketingStats, setMarketingStats] = useState(() => getEmailMarketingStats(products));
 
   const wishlistId = useMemo(() => extractWishlistId(wishlistUrl), [wishlistUrl]);
   const fallbackAsins = useMemo(() => extractAsinsFromLines(fallbackInput), [fallbackInput]);
@@ -105,6 +107,29 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
   const amazonUrlHelpText = isShortAmazonUrl(amazonUrl)
     ? 'Short link detected. Product can be saved manually.'
     : `${amazonUrlAsins.length} ASIN${amazonUrlAsins.length === 1 ? '' : 's'} detected`;
+  const campaignPlans = useMemo(() => createCampaignPlan(products, selectedCountry), [products, selectedCountry]);
+
+
+  useEffect(() => {
+    const refreshStats = () => setMarketingStats(getEmailMarketingStats(products));
+    refreshStats();
+    window.addEventListener('gadgets-mela-analytics', refreshStats);
+    window.addEventListener('storage', refreshStats);
+    return () => {
+      window.removeEventListener('gadgets-mela-analytics', refreshStats);
+      window.removeEventListener('storage', refreshStats);
+    };
+  }, [products]);
+
+  function downloadSubscriberCsv() {
+    const blob = new globalThis.Blob([exportSubscribersCsv()], { type: 'text/csv;charset=utf-8' });
+    const url = globalThis.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `gadgets-mela-subscribers-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    globalThis.URL.revokeObjectURL(url);
+  }
 
   useEffect(() => {
     let active = true;
@@ -326,6 +351,43 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
               {editor.image && <img className={`editor-preview ${editor.imageRatio === 'vertical' ? 'vertical' : ''}`} src={editor.image} alt="Product upload preview" />}
               <button type="submit">Save static product card</button>
             </form>
+
+
+            <div className="automation-card email-command-center">
+              <h3><MailCheck size={18} /> Deal alert automation</h3>
+              <p>Subscriber model stores name, email, tags, country, and createdAt locally or through /api/subscribers, then syncs to Resend, Brevo, or Mailchimp when environment keys are configured.</p>
+              <div className="email-metrics-grid">
+                <span><strong>{marketingStats.totalSubscribers}</strong>Total subscribers</span>
+                <span><strong>{marketingStats.openRate}%</strong>Open rate</span>
+                <span><strong>{marketingStats.clickRate}%</strong>Click rate</span>
+                <span><strong>{marketingStats.conversionRate}%</strong>Popup conversion</span>
+              </div>
+              <button type="button" onClick={downloadSubscriberCsv}><Download size={16} /> Export CSV</button>
+            </div>
+
+            <div className="automation-card email-command-center">
+              <h3><BarChart3 size={18} /> Email + affiliate analytics</h3>
+              <p>Tracks popup impressions, subscribe conversion rate, email clicks, affiliate clicks, and the top clicked product cards without blocking Core Web Vitals.</p>
+              <div className="analytics-list">
+                <span>Popup impressions <strong>{marketingStats.analytics.popupImpressions}</strong></span>
+                <span>Exit intent impressions <strong>{marketingStats.analytics.exitIntentImpressions}</strong></span>
+                <span>Email clicks <strong>{marketingStats.analytics.emailClicks}</strong></span>
+                <span>Affiliate clicks <strong>{marketingStats.analytics.affiliateClicks}</strong></span>
+              </div>
+              <h4>Top clicked products</h4>
+              {marketingStats.topClickedProducts.length ? marketingStats.topClickedProducts.map(({ product, productId, clicks }) => <span className="clicked-product" key={productId}>{product?.name || productId}<strong>{clicks}</strong></span>) : <p className="admin-help">Clicks will appear after shoppers use Amazon CTA buttons.</p>}
+            </div>
+
+            <div className="automation-card campaign-system">
+              <h3><MailCheck size={18} /> Campaign system</h3>
+              <p>Prepared automations for Deal of the Day, daily deal emails, weekly top gadgets digest, and Amazon festival sale blasts with dark responsive product-card templates.</p>
+              {campaignPlans.map((campaign) => (
+                <details key={campaign.id}>
+                  <summary>{campaign.title} <span>{campaign.cadence}</span></summary>
+                  <p>{campaign.segment} · {campaign.products.length} product cards ready</p>
+                </details>
+              ))}
+            </div>
 
             <div className="automation-card">
               <h3><RefreshCw size={18} /> Local refresh</h3>
