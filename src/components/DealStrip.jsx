@@ -6,9 +6,9 @@ export default function DealStrip({ products = [] }) {
     ? (products.reduce((total, product) => total + Number(product.rating || 0), 0) / products.length).toFixed(1)
     : '—';
   const deals = [
-    { icon: Percent, value: `${bestDiscount}%`, label: 'top live discount' },
-    { icon: Clock3, value: '24h', label: 'auto-refresh cycle' },
-    { icon: Star, value: averageRating, label: 'rating sync average' },
+    { icon: Percent, value: `${bestDiscount}%`, label: 'top local discount' },
+    { icon: Clock3, value: '24h', label: 'local refresh cycle' },
+    { icon: Star, value: averageRating, label: 'rating average' },
     { icon: Truck, value: 'Prime', label: 'shipping-friendly picks' },
   ];
 

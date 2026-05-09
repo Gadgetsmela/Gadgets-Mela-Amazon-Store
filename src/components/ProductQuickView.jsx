@@ -1,12 +1,12 @@
 import { ExternalLink, MessageCircle, Send, Star, X } from 'lucide-react';
 import { DEFAULT_COUNTRY } from '../data/countries.js';
-import { withAffiliateTag } from '../utils/affiliate.js';
+import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
 
 export default function ProductQuickView({ product, selectedCountry = DEFAULT_COUNTRY, onClose }) {
   if (!product) return null;
 
-  const affiliateUrl = withAffiliateTag(product.affiliateUrl, selectedCountry);
+  const affiliateUrl = getAffiliateUrl(product, selectedCountry);
   const { price, originalPrice } = getProductPrices(product, selectedCountry);
   const shareText = encodeURIComponent(`Check this Gadgets Mela Amazon deal: ${product.name} ${affiliateUrl}`);
   const galleryImages = product.galleryImages?.length ? product.galleryImages : [product.image].filter(Boolean);
@@ -19,7 +19,7 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
           <X size={20} />
         </button>
         <div className="quick-view-media">
-          {String(primaryImage || '').startsWith('http') ? <img src={primaryImage} alt={product.name} /> : <span>🛒</span>}
+          {String(primaryImage || '').startsWith('http') || String(primaryImage || '').startsWith('data:') ? <img src={primaryImage} alt={product.name} /> : <span>🛒</span>}
           {product.bestDeal && <strong>Best Deal</strong>}
           {galleryImages.length > 1 && (
             <div className="gallery-strip" aria-label="Amazon gallery images">
@@ -38,7 +38,7 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
           </div>
           <div className="product-meta-row">
             <span>{product.availability}</span>
-            {product.amazonCategory && <em>{product.amazonCategory}</em>}
+            {product.importStatus && <em>{product.importStatus}</em>}
           </div>
           <div className="price-row">
             <strong>{formatCurrency(price, selectedCountry)}</strong>
