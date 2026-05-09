@@ -3,6 +3,8 @@ import { DEFAULT_COUNTRY, getCountryConfig } from '../data/countries.js';
 import { buildAmazonProductUrl, getAffiliateUrl, withAffiliateTag } from '../utils/affiliate.js';
 import { getProductPrices } from '../utils/format.js';
 import { normalizeProductImages } from '../utils/productImages.js';
+import { runAiDealEngine } from './aiDealEngine.js';
+import { getMarketingAnalytics } from './dealMarketing.js';
 
 const STORAGE_KEY = 'gadgets-mela-products-v4';
 const REFRESH_KEY = 'gadgets-mela-last-refresh';
@@ -61,7 +63,10 @@ export function enrichProduct(product) {
     imageRatio: images.imageRatio,
     affiliateUrl: product.affiliateUrl || (asin ? buildAmazonProductUrl(asin) : ''),
     discountPercent: discount,
-    badge: product.badge || (bestDeal ? 'Best Deal' : (discount ? `${discount}% off` : 'Editor pick')),
+    badge: product.autoBadge || product.badge || (bestDeal ? 'HOT DEAL' : (discount ? `${discount}% off` : 'CREATOR PICK')),
+    autoBadge: product.autoBadge || '',
+    dealScore: toNumber(product.dealScore, product.trendingScore || 0),
+    adminBoost: Boolean(product.adminBoost),
     bestDeal,
     featured: Boolean(product.featured || bestDeal || discount >= 25),
     availability: product.availability || 'Check Amazon for current availability',
@@ -329,7 +334,8 @@ export async function refreshProducts(products, countryCode = DEFAULT_COUNTRY, f
   }
 
   storage?.setItem(REFRESH_KEY, String(Date.now()));
-  return saveProducts(products.map((product) => ({ ...product, updatedAt: new Date().toISOString(), importStatus: product.importStatus || 'local' })));
+  const locallyRefreshed = products.map((product) => ({ ...product, updatedAt: new Date().toISOString(), importStatus: product.importStatus || 'local' }));
+  return saveProducts(runAiDealEngine(locallyRefreshed, getMarketingAnalytics(), countryCode).products);
 }
 
 export function buildProductMeta(product, countryCode = DEFAULT_COUNTRY) {

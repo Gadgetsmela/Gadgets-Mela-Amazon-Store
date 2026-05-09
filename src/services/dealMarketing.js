@@ -22,6 +22,11 @@ const defaultAnalytics = {
   productClicks: {},
   whatsappClicks: 0,
   productShares: {},
+  telegramClicks: 0,
+  instagramSourceClicks: 0,
+  recentViews: {},
+  dailyHotProducts: {},
+  categoryClicks: {},
   countryWhatsAppClicks: {},
   whatsappSourceClicks: {},
 };
@@ -69,7 +74,20 @@ export function trackMarketingEvent(eventName, payload = {}) {
 
   if (eventName === 'productClick' && payload.productId) {
     next.productClicks = { ...next.productClicks, [payload.productId]: (next.productClicks?.[payload.productId] || 0) + 1 };
+    if (payload.category) {
+      next.categoryClicks = { ...next.categoryClicks, [payload.category]: (next.categoryClicks?.[payload.category] || 0) + 1 };
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const todaysHotProducts = next.dailyHotProducts?.[today] || {};
+    next.dailyHotProducts = { ...next.dailyHotProducts, [today]: { ...todaysHotProducts, [payload.productId]: (todaysHotProducts[payload.productId] || 0) + 1 } };
   }
+
+  if (eventName === 'productView' && payload.productId) {
+    next.recentViews = { ...next.recentViews, [payload.productId]: (next.recentViews?.[payload.productId] || 0) + 1 };
+  }
+
+  if (eventName === 'telegramClick') next.telegramClicks = (next.telegramClicks || 0) + 1;
+  if (eventName === 'instagramClick') next.instagramSourceClicks = (next.instagramSourceClicks || 0) + 1;
 
   if (eventName === 'whatsappClick') {
     next.whatsappClicks = (next.whatsappClicks || 0) + 1;
