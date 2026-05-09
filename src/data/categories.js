@@ -6,4 +6,8 @@ export const categories = [
   'Smart Home',
   'Accessories',
   'Creator Setup',
+  'Entertainment',
+  'Workspace',
+  'Storage',
+  'Gadgets',
 ];

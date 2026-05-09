@@ -122,7 +122,7 @@ export default function App() {
             <img src="/brand/gm-icon.svg" alt="" width="88" height="88" aria-hidden="true" />
           </div>
           <strong>GADGETS MELA</strong>
-          <span>Powering up premium automated Amazon deals...</span>
+          <span>Loading local affiliate product database...</span>
         </div>
       )}
       <Header
