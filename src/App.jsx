@@ -11,6 +11,7 @@ import AffiliateDisclosure from './components/AffiliateDisclosure.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import ProductQuickView from './components/ProductQuickView.jsx';
 import TrendingProducts from './components/TrendingProducts.jsx';
+import DealAlertCapture from './components/DealAlertCapture.jsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
@@ -174,6 +175,7 @@ export default function App() {
         )}
       </main>
       <Footer />
+      {!isWishlistImportPage && <DealAlertCapture selectedCountry={selectedCountry} />}
       <ProductQuickView product={quickViewProduct} selectedCountry={selectedCountry} onClose={() => setQuickViewProduct(null)} />
     </div>
   );

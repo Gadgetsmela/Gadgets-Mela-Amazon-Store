@@ -3,6 +3,7 @@ import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
 import { getOptimizedImageSources } from '../utils/productImages.js';
+import { trackMarketingEvent } from '../services/dealMarketing.js';
 
 export default function ProductQuickView({ product, selectedCountry = DEFAULT_COUNTRY, onClose }) {
   if (!product) return null;
@@ -48,7 +49,7 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
             <em>{product.discountPercent || 0}% off</em>
           </div>
           <div className="quick-actions">
-            <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">
+            <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener" onClick={() => { trackMarketingEvent('affiliateClick', { productId: product.id }); trackMarketingEvent('productClick', { productId: product.id }); }}>
               Buy on Amazon <ExternalLink size={16} />
             </a>
             <a className="share-button" href={`https://wa.me/?text=${shareText}`} target="_blank" rel="noreferrer noopener">

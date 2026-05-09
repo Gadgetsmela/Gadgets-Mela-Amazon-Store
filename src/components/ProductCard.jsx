@@ -4,6 +4,7 @@ import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
 import { getOptimizedImageSources, getProductImageCandidates, repairAmazonImageUrl } from '../utils/productImages.js';
+import { trackMarketingEvent } from '../services/dealMarketing.js';
 
 export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY, onQuickView, priority = false }) {
   const countryCode = selectedCountry || DEFAULT_COUNTRY;
@@ -70,7 +71,7 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
           <em>{product.discountPercent || 0}% off</em>
         </div>
         <div className="card-actions">
-          <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener">
+          <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener" onClick={() => { trackMarketingEvent('affiliateClick', { productId: product.id }); trackMarketingEvent('productClick', { productId: product.id }); }}>
             Amazon <ExternalLink size={16} />
           </a>
           <button className="quick-button" type="button" onClick={() => onQuickView?.(product)}>
