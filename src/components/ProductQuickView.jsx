@@ -2,6 +2,7 @@ import { ExternalLink, MessageCircle, Send, Star, X } from 'lucide-react';
 import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
+import { getOptimizedImageSources } from '../utils/productImages.js';
 
 export default function ProductQuickView({ product, selectedCountry = DEFAULT_COUNTRY, onClose }) {
   if (!product) return null;
@@ -9,8 +10,9 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
   const affiliateUrl = getAffiliateUrl(product, selectedCountry);
   const { price, originalPrice } = getProductPrices(product, selectedCountry);
   const shareText = encodeURIComponent(`Check this Gadgets Mela Amazon deal: ${product.name} ${affiliateUrl}`);
-  const galleryImages = product.galleryImages?.length ? product.galleryImages : [product.image].filter(Boolean);
-  const primaryImage = galleryImages[0];
+  const imageSources = getOptimizedImageSources(product);
+  const galleryImages = imageSources.galleryImages;
+  const primaryImage = galleryImages[0] || imageSources.src;
 
   return (
     <div className="quick-view-backdrop" role="presentation" onClick={onClose}>
@@ -19,7 +21,7 @@ export default function ProductQuickView({ product, selectedCountry = DEFAULT_CO
           <X size={20} />
         </button>
         <div className="quick-view-media">
-          {String(primaryImage || '').startsWith('http') || String(primaryImage || '').startsWith('data:') ? <img src={primaryImage} alt={product.name} /> : <span>🛒</span>}
+          <img src={primaryImage} alt={product.name} loading="eager" decoding="async" />
           {product.bestDeal && <strong>Best Deal</strong>}
           {galleryImages.length > 1 && (
             <div className="gallery-strip" aria-label="Amazon gallery images">

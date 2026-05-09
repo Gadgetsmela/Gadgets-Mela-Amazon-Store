@@ -14,6 +14,7 @@ import TrendingProducts from './components/TrendingProducts.jsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
+import { getOptimizedImageSources } from './utils/productImages.js';
 
 function upsertMeta(selector, createElement) {
   let element = document.head.querySelector(selector);
@@ -45,6 +46,26 @@ export default function App() {
 
   useEffect(() => {
     productsRef.current = products;
+  }, [products]);
+
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return undefined;
+
+    const preloadLinks = products.slice(0, 4).map((product, index) => {
+      const { src } = getOptimizedImageSources(product);
+      if (!src) return null;
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = src;
+      link.fetchPriority = index === 0 ? 'high' : 'low';
+      link.dataset.gadgetsMelaPreload = 'true';
+      document.head.appendChild(link);
+      return link;
+    }).filter(Boolean);
+
+    return () => preloadLinks.forEach((link) => link.remove());
   }, [products]);
 
   useEffect(() => {

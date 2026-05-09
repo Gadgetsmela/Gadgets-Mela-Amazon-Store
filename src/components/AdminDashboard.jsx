@@ -29,6 +29,9 @@ const blankProduct = {
   summary: '',
   badge: '',
   image: '',
+  galleryImages: '',
+  thumbnail: '',
+  imageRatio: 'square',
   priceINR: '',
   originalPriceINR: '',
   priceUSD: '',
@@ -46,6 +49,11 @@ const blankProduct = {
 
 function normalizeEditableProduct(form) {
   const tags = String(form.tags || '').split(',').map((tag) => tag.trim()).filter(Boolean);
+  const galleryImages = String(form.galleryImages || '')
+    .split(/[\n,]+/)
+    .map((image) => image.trim())
+    .filter(Boolean);
+
   return enrichProduct({
     ...form,
     id: form.id || (form.asin ? `asin-${form.asin.toUpperCase()}` : undefined),
@@ -61,7 +69,9 @@ function normalizeEditableProduct(form) {
     rating: Number(form.rating || 0),
     reviewCount: Number(form.reviewCount || 0),
     tags,
-    galleryImages: form.image ? [form.image] : [],
+    galleryImages: [form.image, ...galleryImages].filter(Boolean),
+    thumbnail: form.thumbnail || form.image,
+    imageRatio: form.imageRatio || 'square',
     importStatus: 'edited',
     updatedAt: new Date().toISOString(),
   });
@@ -157,16 +167,43 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
       ...blankProduct,
       ...product,
       tags: (product.tags || []).join(', '),
+      galleryImages: (product.galleryImages || []).join('\n'),
     });
     document.getElementById('manual-product-editor')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
-  function handleImageUpload(event) {
+  function resizeImage(file, maxWidth, mimeType = 'image/webp', quality = 0.78) {
+    return new Promise((resolve) => {
+      const reader = new globalThis.FileReader();
+      reader.addEventListener('load', () => {
+        const image = new globalThis.Image();
+        image.addEventListener('load', () => {
+          const scale = Math.min(1, maxWidth / image.width);
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(image.width * scale);
+          canvas.height = Math.round(image.height * scale);
+          canvas.getContext('2d').drawImage(image, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL(mimeType, quality));
+        });
+        image.src = reader.result;
+      });
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleImageUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
-    const reader = new globalThis.FileReader();
-    reader.addEventListener('load', () => setEditor((current) => ({ ...current, image: reader.result })));
-    reader.readAsDataURL(file);
+    const [image, thumbnail] = await Promise.all([
+      resizeImage(file, 960, 'image/webp', 0.82),
+      resizeImage(file, 280, 'image/webp', 0.7),
+    ]);
+    setEditor((current) => ({
+      ...current,
+      image,
+      thumbnail,
+      galleryImages: [image, current.galleryImages].filter(Boolean).join('\n'),
+    }));
   }
 
   const wishlistPanel = (
@@ -242,6 +279,10 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
                 </select>
                 <input value={editor.badge} onChange={(event) => setEditor({ ...editor, badge: event.target.value })} placeholder="Custom deal badge" />
                 <input value={editor.tags} onChange={(event) => setEditor({ ...editor, tags: event.target.value })} placeholder="Tags, comma separated" />
+                <select value={editor.imageRatio} onChange={(event) => setEditor({ ...editor, imageRatio: event.target.value })} aria-label="Image ratio">
+                  <option value="square">Square product image</option>
+                  <option value="vertical">Pinterest vertical 2:3</option>
+                </select>
               </div>
               <textarea value={editor.summary} onChange={(event) => setEditor({ ...editor, summary: event.target.value })} placeholder="Short product summary" />
               <div className="price-editor-grid">
@@ -260,8 +301,13 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
                 <input value={editor.availability} onChange={(event) => setEditor({ ...editor, availability: event.target.value })} placeholder="Availability copy" />
                 <label className="checkbox-row"><input type="checkbox" checked={editor.featured} onChange={(event) => setEditor({ ...editor, featured: event.target.checked })} /> Auto feature</label>
               </div>
-              <label className="image-upload"><ImagePlus size={18} /> Upload Pinterest-ready product image<input type="file" accept="image/*" onChange={handleImageUpload} /></label>
-              {editor.image && <img className="editor-preview" src={editor.image} alt="Product upload preview" />}
+              <div className="editor-grid">
+                <input value={editor.image} onChange={(event) => setEditor({ ...editor, image: event.target.value })} placeholder="Primary image URL or uploaded data URL" />
+                <input value={editor.thumbnail} onChange={(event) => setEditor({ ...editor, thumbnail: event.target.value })} placeholder="Compressed thumbnail URL (auto-filled on upload)" />
+              </div>
+              <textarea value={editor.galleryImages} onChange={(event) => setEditor({ ...editor, galleryImages: event.target.value })} placeholder="Gallery image URLs, one per line" />
+              <label className="image-upload"><ImagePlus size={18} /> Upload optimized WebP product image<input type="file" accept="image/*" onChange={handleImageUpload} /></label>
+              {editor.image && <img className={`editor-preview ${editor.imageRatio === 'vertical' ? 'vertical' : ''}`} src={editor.image} alt="Product upload preview" />}
               <button type="submit">Save static product card</button>
             </form>
 

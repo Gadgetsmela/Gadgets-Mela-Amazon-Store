@@ -14,8 +14,8 @@ export default function ProductGrid({ products, selectedCountry, isLoading = fal
         <ProductSkeleton />
       ) : (
         <div className="product-grid">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} selectedCountry={selectedCountry} onQuickView={onQuickView} />
+          {products.map((product, index) => (
+            <ProductCard key={product.id} product={product} selectedCountry={selectedCountry} onQuickView={onQuickView} priority={index < 4} />
           ))}
         </div>
       )}
