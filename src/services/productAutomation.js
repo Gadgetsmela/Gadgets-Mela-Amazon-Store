@@ -1,6 +1,6 @@
 import { products as staticProducts } from '../data/products.js';
 import { DEFAULT_COUNTRY, getCountryConfig } from '../data/countries.js';
-import { buildAmazonProductUrl, getAffiliateUrl } from '../utils/affiliate.js';
+import { buildAmazonProductUrl, getAffiliateUrl, withAffiliateTag } from '../utils/affiliate.js';
 import { getProductPrices } from '../utils/format.js';
 import { normalizeProductImages } from '../utils/productImages.js';
 
@@ -9,6 +9,8 @@ const REFRESH_KEY = 'gadgets-mela-last-refresh';
 const ONE_DAY = 24 * 60 * 60 * 1000;
 const PAAPI_ENDPOINT = import.meta.env.VITE_AMAZON_PAAPI_ENDPOINT || '/api/amazon';
 const ENABLE_PAAPI = import.meta.env.VITE_ENABLE_AMAZON_PAAPI === 'true';
+const ASIN_GLOBAL_REGEX = /(?:dp\/|gp\/product\/)?([A-Z0-9]{10})/g;
+const AMAZON_HOST_REGEX = /(^|\.)amazon\.[a-z.]+$/i;
 
 function safeLocalStorage() {
   return typeof window === 'undefined' ? null : window.localStorage;
@@ -93,9 +95,7 @@ export function saveProducts(products) {
 }
 
 export function extractAsin(input) {
-  const value = String(input || '').trim();
-  const asinMatch = value.match(/(?:dp|gp\/product|product|ASIN)\/([A-Z0-9]{10})|[?&]asin=([A-Z0-9]{10})|\b([A-Z0-9]{10})\b/i);
-  return asinMatch ? (asinMatch[1] || asinMatch[2] || asinMatch[3]).toUpperCase() : '';
+  return extractAsinsFromLines(input)[0] || '';
 }
 
 export function extractWishlistId(input) {
@@ -105,15 +105,43 @@ export function extractWishlistId(input) {
 }
 
 export function extractAsinsFromLines(input) {
-  return [...new Set(String(input || '')
-    .split(/[\n,\s]+/)
-    .map(extractAsin)
-    .filter(Boolean))];
+  const normalizedInput = String(input || '').toUpperCase();
+  const matches = normalizedInput.matchAll(ASIN_GLOBAL_REGEX);
+  return [...new Set([...matches].map((match) => match[1]).filter(Boolean))];
+}
+
+export function isShortAmazonUrl(input) {
+  const value = String(input || '').trim();
+  if (!value) return false;
+
+  try {
+    const parsed = new globalThis.URL(value);
+    return parsed.hostname.replace(/^www\./i, '').toLowerCase() === 'amzn.to';
+  } catch {
+    return false;
+  }
+}
+
+export function isAmazonUrl(input) {
+  const value = String(input || '').trim();
+  if (!value) return false;
+
+  try {
+    const parsed = new globalThis.URL(value);
+    const hostname = parsed.hostname.replace(/^www\./i, '');
+    return isShortAmazonUrl(value) || AMAZON_HOST_REGEX.test(hostname);
+  } catch {
+    return false;
+  }
+}
+
+export function canCreateFallbackDeal(input) {
+  return extractAsinsFromLines(input).length > 0 || isAmazonUrl(input);
 }
 
 export function parseAmazonProductUrl(url, countryCode = DEFAULT_COUNTRY) {
   const asin = extractAsin(url);
-  if (!asin) throw new Error('Enter a valid Amazon product URL or ASIN.');
+  if (!asin) throw new Error('No ASIN found. Please paste Amazon product URL or ASIN');
   return createFallbackProduct(asin, { sourceUrl: url, countryCode, importStatus: 'url parsed' });
 }
 
@@ -127,7 +155,7 @@ function createFallbackProduct(asin, overrides = {}) {
     category: overrides.category || 'Gadgets',
     summary: overrides.summary || 'Manual Amazon affiliate card. Add the exact product title, image, badge, MRP, and live price in the editor when PA API is unavailable.',
     badge: overrides.badge || 'Manual ASIN',
-    affiliateUrl: buildAmazonProductUrl(cleanAsin, country.code),
+    affiliateUrl: withAffiliateTag(buildAmazonProductUrl(cleanAsin, country.code), country.code),
     availability: 'Affiliate link ready; verify live stock on Amazon',
     tags: ['manual', 'asin', cleanAsin.toLowerCase()],
     priceINR: 0,
@@ -140,6 +168,29 @@ function createFallbackProduct(asin, overrides = {}) {
     originalPriceCAD: 0,
     importStatus: overrides.importStatus || 'manual',
     updatedAt: new Date().toISOString(),
+    ...overrides,
+  });
+}
+
+
+function createManualAffiliateDeal(url, countryCode = DEFAULT_COUNTRY, overrides = {}) {
+  const country = getCountryConfig(countryCode);
+  const cleanUrl = String(url || '').trim();
+  const shortLink = isShortAmazonUrl(cleanUrl);
+
+  return enrichProduct({
+    id: `manual-url-${slugify(cleanUrl)}-${Date.now()}`,
+    name: overrides.name || (shortLink ? 'Manual Amazon short link deal' : 'Manual Amazon affiliate deal'),
+    category: overrides.category || 'Gadgets',
+    summary: overrides.summary || (shortLink
+      ? 'Short link detected. Product can be saved manually. Add title, price, image, and exact details in the editor.'
+      : 'Manual Amazon affiliate card. Add title, price, image, and exact details in the editor.'),
+    badge: overrides.badge || (shortLink ? 'Short link' : 'Manual URL'),
+    affiliateUrl: shortLink ? cleanUrl : withAffiliateTag(cleanUrl, country.code),
+    availability: 'Affiliate link ready; verify live stock on Amazon',
+    tags: ['manual', 'amazon', shortLink ? 'short-link' : 'url'],
+    sourceUrl: cleanUrl,
+    importStatus: shortLink ? 'short-url' : 'manual-url',
     ...overrides,
   });
 }
@@ -222,15 +273,10 @@ export async function importAsins(input, countryCode = DEFAULT_COUNTRY) {
 
 export async function importAmazonUrl(url, countryCode = DEFAULT_COUNTRY) {
   const asin = extractAsin(url);
-  if (!asin) throw new Error('Enter a valid Amazon product URL or ASIN.');
-
-  if (ENABLE_PAAPI) {
-    try {
-      const { products } = await callPaapi({ action: 'url', url, countryCode });
-      if (products.length) return products;
-    } catch {
-      // Fall through to parsed URL fallback.
-    }
+  if (!asin) {
+    if (isShortAmazonUrl(url)) return [createManualAffiliateDeal(url, countryCode)];
+    if (isAmazonUrl(url)) return [createManualAffiliateDeal(url, countryCode)];
+    throw new Error('No ASIN found. Please paste Amazon product URL or ASIN');
   }
 
   return [parseAmazonProductUrl(url, countryCode)];
@@ -256,8 +302,10 @@ export async function importWishlist(url, countryCode = DEFAULT_COUNTRY) {
 
 export async function importWishlistFallback(input, countryCode = DEFAULT_COUNTRY) {
   const asins = extractAsinsFromLines(input);
-  if (!asins.length) throw new Error('Paste Amazon product URLs or ASINs line-by-line for fallback import.');
-  return importAsins(asins, countryCode);
+  if (asins.length) return asins.map((asin) => createFallbackProduct(asin, { countryCode }));
+  if (isShortAmazonUrl(input)) return [createManualAffiliateDeal(input, countryCode)];
+  if (isAmazonUrl(input)) return [createManualAffiliateDeal(input, countryCode)];
+  throw new Error('No ASIN found. Please paste Amazon product URL or ASIN');
 }
 
 export async function refreshProducts(products, countryCode = DEFAULT_COUNTRY, force = false) {

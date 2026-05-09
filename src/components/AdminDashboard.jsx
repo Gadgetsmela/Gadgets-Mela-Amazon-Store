@@ -2,12 +2,14 @@ import { AlertTriangle, CheckCircle2, ClipboardList, Database, Edit3, ImagePlus,
 import { useEffect, useMemo, useState } from 'react';
 import { categories } from '../data/categories.js';
 import {
+  canCreateFallbackDeal,
   enrichProduct,
   extractAsinsFromLines,
   extractWishlistId,
   getAmazonApiStatus,
   importAmazonUrl,
   importAsins,
+  isShortAmazonUrl,
   importWishlist,
   importWishlistFallback,
   refreshProducts,
@@ -93,6 +95,16 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
 
   const wishlistId = useMemo(() => extractWishlistId(wishlistUrl), [wishlistUrl]);
   const fallbackAsins = useMemo(() => extractAsinsFromLines(fallbackInput), [fallbackInput]);
+  const asinInputAsins = useMemo(() => extractAsinsFromLines(asinInput), [asinInput]);
+  const amazonUrlAsins = useMemo(() => extractAsinsFromLines(amazonUrl), [amazonUrl]);
+  const canUseFallbackInput = useMemo(() => canCreateFallbackDeal(fallbackInput), [fallbackInput]);
+  const canUseAmazonUrl = useMemo(() => canCreateFallbackDeal(amazonUrl), [amazonUrl]);
+  const fallbackHelpText = isShortAmazonUrl(fallbackInput)
+    ? 'Short link detected. Product can be saved manually.'
+    : `${fallbackAsins.length} ASIN${fallbackAsins.length === 1 ? '' : 's'} detected`;
+  const amazonUrlHelpText = isShortAmazonUrl(amazonUrl)
+    ? 'Short link detected. Product can be saved manually.'
+    : `${amazonUrlAsins.length} ASIN${amazonUrlAsins.length === 1 ? '' : 's'} detected`;
 
   useEffect(() => {
     let active = true;
@@ -111,7 +123,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
     return () => { active = false; };
   }, [selectedCountry]);
 
-  function mergeProducts(incoming) {
+  function mergeProducts(incoming, successMessage = '') {
     const productsByKey = new Map(products.map((product) => [(product.asin || product.id).toUpperCase?.() || product.id, product]));
     const importedProducts = [];
     const duplicateAsins = [];
@@ -133,16 +145,18 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
     const duplicateCopy = duplicateAsins.length ? ` Updated ${duplicateAsins.length} existing product${duplicateAsins.length === 1 ? '' : 's'}.` : '';
     setLastImportSummary({ imported: importedProducts.length, duplicates: duplicateAsins.length });
     setImportStatus(incoming.length ? 'imported' : 'failed');
-    setStatus(`${importedProducts.length} local affiliate product${importedProducts.length === 1 ? '' : 's'} saved.${duplicateCopy}`);
+    setStatus(successMessage || `${importedProducts.length} local affiliate product${importedProducts.length === 1 ? '' : 's'} saved.${duplicateCopy}`);
   }
 
-  async function runImport(task, fetchingMessage = 'Generating local affiliate product cards...') {
+  async function runImport(task, fetchingMessage = 'Generating local affiliate product cards...', successMessage = '') {
     setIsSyncing(true);
     setImportStatus('fetching');
     setStatus(fetchingMessage);
     try {
       const imported = await task();
-      mergeProducts(imported);
+      const importedProducts = Array.isArray(imported) ? imported : [];
+      const shortUrlImported = importedProducts.some((product) => product.importStatus === 'short-url');
+      mergeProducts(importedProducts, shortUrlImported ? 'Short URL saved as manual affiliate deal' : successMessage);
     } catch (error) {
       setImportStatus('failed');
       setStatus(error.message);
@@ -158,7 +172,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
       setStatus('Add a product title before saving the static product card.');
       return;
     }
-    mergeProducts([normalizeEditableProduct(editor)]);
+    mergeProducts([normalizeEditableProduct(editor)], 'Product added successfully');
     setEditor(blankProduct);
   }
 
@@ -220,8 +234,8 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
         <h4><AlertTriangle size={16} /> Manual ASIN fallback</h4>
         <p>If Amazon blocks direct wishlist access, paste one product URL or ASIN per line.</p>
         <textarea value={fallbackInput} onChange={(event) => setFallbackInput(event.target.value)} placeholder={`https://www.amazon.in/dp/B09B8V1LZ3\nB0B7B9V7H8`} />
-        <small>{fallbackAsins.length} ASIN{fallbackAsins.length === 1 ? '' : 's'} detected</small>
-        <button type="button" disabled={isSyncing || !fallbackAsins.length} onClick={() => runImport(() => importWishlistFallback(fallbackInput, selectedCountry))}>{isSyncing ? 'Importing...' : 'Create fallback products'}</button>
+        <small>{fallbackHelpText}</small>
+        <button type="button" disabled={isSyncing || !canUseFallbackInput} onClick={() => runImport(() => importWishlistFallback(fallbackInput, selectedCountry), 'Generating local affiliate product cards...', 'Product added successfully')}>{isSyncing ? 'Importing...' : 'Create fallback products'}</button>
       </div>
     </form>
   );
@@ -254,16 +268,18 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
               <button type="submit" disabled={isSyncing || !keywords.trim()}>{isSyncing ? 'Searching...' : 'Find local products'}</button>
             </form>
 
-            <form onSubmit={(event) => { event.preventDefault(); runImport(() => importAsins(asinInput, selectedCountry)); }}>
+            <form onSubmit={(event) => { event.preventDefault(); runImport(() => importAsins(asinInput, selectedCountry), 'Generating local affiliate product cards...', 'Product added successfully'); }}>
               <h3><UploadCloud size={18} /> Manual ASIN import</h3>
               <textarea value={asinInput} onChange={(event) => setAsinInput(event.target.value)} placeholder={`B09B8V1LZ3\nB0B7B9V7H8`} />
-              <button type="submit" disabled={isSyncing || !extractAsinsFromLines(asinInput).length}>{isSyncing ? 'Importing...' : 'Create ASIN cards'}</button>
+              <small>{asinInputAsins.length} ASIN{asinInputAsins.length === 1 ? '' : 's'} detected</small>
+              <button type="submit" disabled={isSyncing || !asinInputAsins.length}>{isSyncing ? 'Importing...' : 'Create ASIN cards'}</button>
             </form>
 
-            <form onSubmit={(event) => { event.preventDefault(); runImport(() => importAmazonUrl(amazonUrl, selectedCountry), 'Parsing Amazon product URL locally...'); }}>
+            <form onSubmit={(event) => { event.preventDefault(); runImport(() => importAmazonUrl(amazonUrl, selectedCountry), 'Parsing Amazon product URL locally...', 'Product added successfully'); }}>
               <h3><Link size={18} /> Add by Amazon URL</h3>
-              <input value={amazonUrl} onChange={(event) => setAmazonUrl(event.target.value)} placeholder="https://www.amazon.in/dp/ASIN" />
-              <button type="submit" disabled={isSyncing || !amazonUrl.trim()}>{isSyncing ? 'Generating...' : 'Generate affiliate link'}</button>
+              <input value={amazonUrl} onChange={(event) => setAmazonUrl(event.target.value)} placeholder="https://www.amazon.in/dp/ASIN or https://amzn.to/deal" />
+              <small>{amazonUrlHelpText}</small>
+              <button type="submit" disabled={isSyncing || !canUseAmazonUrl}>{isSyncing ? 'Generating...' : 'Generate affiliate link'}</button>
             </form>
 
             <form id="manual-product-editor" className="manual-form" onSubmit={saveEditorProduct}>
