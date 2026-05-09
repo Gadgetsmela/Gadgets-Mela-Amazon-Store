@@ -1,4 +1,4 @@
-import { AlertTriangle, BarChart3, CheckCircle2, ClipboardList, Database, Download, Edit3, ImagePlus, Link, MailCheck, RefreshCw, Search, UploadCloud, WifiOff } from 'lucide-react';
+import { AlertTriangle, BarChart3, Bot, CheckCircle2, Clipboard, ClipboardList, Database, Download, Edit3, Flame, ImagePlus, Link, MailCheck, RefreshCw, Search, Send, UploadCloud, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import { categories } from '../data/categories.js';
 import {
@@ -15,8 +15,9 @@ import {
   refreshProducts,
   searchAmazonProducts,
 } from '../services/productAutomation.js';
-import { createCampaignPlan, exportSubscribersCsv, getEmailMarketingStats } from '../services/dealMarketing.js';
+import { createCampaignPlan, exportSubscribersCsv, getEmailMarketingStats, getMarketingAnalytics, trackMarketingEvent } from '../services/dealMarketing.js';
 import { getWhatsAppSettings, saveWhatsAppSettings } from '../utils/whatsapp.js';
+import { buildDealCampaigns, buildTelegramPost, getContentPostStatus, getTelegramSettings, runAiDealEngine, saveContentPostStatus, saveTelegramSettings } from '../services/aiDealEngine.js';
 
 const importStatusCopy = {
   pending: 'Pending',
@@ -47,6 +48,7 @@ const blankProduct = {
   rating: '4.4',
   reviewCount: '',
   featured: true,
+  adminBoost: false,
   availability: 'Check Amazon for current availability',
   tags: '',
 };
@@ -76,12 +78,13 @@ function normalizeEditableProduct(form) {
     galleryImages: [form.image, ...galleryImages].filter(Boolean),
     thumbnail: form.thumbnail || form.image,
     imageRatio: form.imageRatio || 'square',
+    adminBoost: Boolean(form.adminBoost),
     importStatus: 'edited',
     updatedAt: new Date().toISOString(),
   });
 }
 
-export default function AdminDashboard({ products, selectedCountry, onProductsChange, wishlistOnly = false }) {
+export default function AdminDashboard({ products, selectedCountry, onProductsChange, wishlistOnly = false, contentPlannerOnly = false, onRunDealEngine }) {
   const [asinInput, setAsinInput] = useState('');
   const [wishlistUrl, setWishlistUrl] = useState('');
   const [fallbackInput, setFallbackInput] = useState('');
@@ -96,6 +99,9 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
   const [isCheckingApi, setIsCheckingApi] = useState(true);
   const [marketingStats, setMarketingStats] = useState(() => getEmailMarketingStats(products));
   const [whatsAppSettings, setWhatsAppSettings] = useState(() => getWhatsAppSettings());
+  const [telegramSettings, setTelegramSettings] = useState(() => getTelegramSettings());
+  const [contentStatus, setContentStatus] = useState(() => getContentPostStatus());
+  const [toast, setToast] = useState('');
 
   const wishlistId = useMemo(() => extractWishlistId(wishlistUrl), [wishlistUrl]);
   const fallbackAsins = useMemo(() => extractAsinsFromLines(fallbackInput), [fallbackInput]);
@@ -110,6 +116,23 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
     ? 'Short link detected. Product can be saved manually.'
     : `${amazonUrlAsins.length} ASIN${amazonUrlAsins.length === 1 ? '' : 's'} detected`;
   const campaignPlans = useMemo(() => createCampaignPlan(products, selectedCountry), [products, selectedCountry]);
+  const dealCampaigns = useMemo(() => buildDealCampaigns(products, selectedCountry), [products, selectedCountry]);
+  const enginePreview = useMemo(() => runAiDealEngine(products, getMarketingAnalytics(), selectedCountry), [products, selectedCountry]);
+  const dashboardWidgets = useMemo(() => {
+    const analytics = marketingStats.analytics;
+    const hotDeals = products.filter((product) => product.autoBadge === 'HOT DEAL' || product.bestDeal).length;
+    const averageScore = products.length ? Math.round(products.reduce((total, product) => total + Number(product.dealScore || product.trendingScore || 0), 0) / products.length) : 0;
+    const bestCategory = Object.entries(analytics.categoryClicks || {}).sort((a, b) => b[1] - a[1])[0]?.[0] || products[0]?.category || 'Gadgets';
+    return {
+      hotDeals,
+      averageScore,
+      topClicked: marketingStats.topClickedProducts[0]?.product?.name || 'Waiting for clicks',
+      topShared: marketingStats.topSharedProducts[0]?.product?.name || 'Waiting for shares',
+      bestCategory,
+      contentReady: products.filter((product) => product.generatedContent).length,
+      telegramStatus: telegramSettings.lastPostStatus || 'Not configured',
+    };
+  }, [marketingStats, products, telegramSettings.lastPostStatus]);
 
 
   useEffect(() => {
@@ -241,6 +264,59 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
     });
   }
 
+
+
+  function showToast(message) {
+    setToast(message);
+    window.setTimeout(() => setToast(''), 2200);
+  }
+
+  function runDealEngineNow() {
+    const result = runAiDealEngine(products, getMarketingAnalytics(), selectedCountry);
+    onProductsChange(result.products);
+    onRunDealEngine?.();
+    setImportStatus('imported');
+    setStatus(`AI Deal Engine refreshed ${result.products.length} products, ${result.sections.length} homepage sections, and ${result.campaigns.length} campaigns.`);
+    showToast('AI Deal Engine refreshed homepage, badges, scores, and captions.');
+  }
+
+  function saveTelegramAdminSettings(event) {
+    event.preventDefault();
+    const saved = saveTelegramSettings(telegramSettings);
+    setTelegramSettings(saved);
+    setImportStatus('imported');
+    setStatus('Telegram settings saved. Bot token is not rendered on public storefront screens.');
+    showToast('Telegram auto-post settings saved.');
+  }
+
+  function copyText(text, label = 'Copy') {
+    navigator.clipboard?.writeText(text);
+    showToast(`${label} copied.`);
+  }
+
+  function markContentPosted(productId) {
+    const next = { ...contentStatus, [productId]: { ...(contentStatus[productId] || {}), posted: true, postedAt: new Date().toISOString() } };
+    setContentStatus(saveContentPostStatus(next));
+    showToast('Marked as posted.');
+  }
+
+  async function prepareTelegramPost(product) {
+    const post = buildTelegramPost(product, selectedCountry);
+    trackMarketingEvent('telegramClick', { productId: product.id });
+    copyText(post.caption, 'Telegram post');
+    let lastPostStatus = telegramSettings.autoPostEnabled ? 'Post prepared for channel' : 'Auto post disabled; caption copied';
+    if (telegramSettings.autoPostEnabled && telegramSettings.channelId) {
+      const response = await fetch('/api/telegram', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...post, channelId: telegramSettings.channelId, botToken: telegramSettings.botToken }),
+      }).catch(() => null);
+      lastPostStatus = response?.ok ? 'Posted to Telegram' : 'Telegram API unavailable; caption copied';
+    }
+    const saved = saveTelegramSettings({ ...telegramSettings, lastPostStatus });
+    setTelegramSettings(saved);
+  }
+
   async function handleImageUpload(event) {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -255,6 +331,51 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
       galleryImages: [image, current.galleryImages].filter(Boolean).join('\n'),
     }));
   }
+
+
+
+  const widgetItems = [
+    ['Total hot deals', dashboardWidgets.hotDeals],
+    ['Trending score average', dashboardWidgets.averageScore],
+    ['Top clicked product', dashboardWidgets.topClicked],
+    ['Top shared product', dashboardWidgets.topShared],
+    ['Best category today', dashboardWidgets.bestCategory],
+    ['Content ready count', dashboardWidgets.contentReady],
+    ['Telegram post status', dashboardWidgets.telegramStatus],
+  ];
+
+  const contentPlannerPanel = (
+    <div className="automation-card content-planner-panel">
+      <h3><Clipboard size={18} /> Instagram / Telegram content planner</h3>
+      <p className="admin-help">Generated locally in Hindi + Hinglish viral gadget-page style. If OPENAI_API_KEY is configured on a backend endpoint, this panel is ready for enhanced AI copy; otherwise template copy keeps the app safe.</p>
+      <div className="content-planner-list">
+        {enginePreview.products.slice(0, 12).map((product) => {
+          const content = product.generatedContent;
+          const status = contentStatus[product.id] || {};
+          return (
+            <article className="content-card" key={product.id}>
+              <div className="content-card-head">
+                <strong>{product.name}</strong>
+                <span>{product.autoBadge || product.badge} · Score {product.dealScore || product.trendingScore || 0}</span>
+              </div>
+              <label>Campaign name<input defaultValue={dealCampaigns.find((campaign) => campaign.products.some((item) => item.id === product.id))?.name || 'Weekend Deals'} /></label>
+              <label>Schedule date<input type="date" defaultValue={new Date().toISOString().slice(0, 10)} /></label>
+              <p><b>Reel:</b> {content.instagramReelCaption}</p>
+              <p><b>Story CTA:</b> {content.instagramStoryText}</p>
+              <p><b>Shorts hook:</b> {content.youtubeShortsHook}</p>
+              <p><b>Telegram:</b> {content.telegramPostCaption}</p>
+              <div className="content-actions">
+                <button type="button" onClick={() => copyText(content.instagramReelCaption, 'Reel caption')}><Clipboard size={15} /> Copy Reel</button>
+                <button type="button" onClick={() => copyText(content.whatsAppShareMessage, 'WhatsApp message')}><Clipboard size={15} /> Copy WhatsApp</button>
+                <button type="button" onClick={() => prepareTelegramPost(product)}><Send size={15} /> Telegram</button>
+                <button type="button" onClick={() => markContentPosted(product.id)}>{status.posted ? 'Posted' : 'Mark as posted'}</button>
+              </div>
+            </article>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   const wishlistPanel = (
     <form className="wishlist-import-card" onSubmit={(event) => { event.preventDefault(); runImport(() => importWishlist(wishlistUrl, selectedCountry), 'Parsing wishlist URL, copied wishlist text, or embedded Amazon product links...'); }}>
@@ -280,7 +401,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
     <section className="admin-dashboard" id="admin" aria-labelledby="admin-title">
       <div className="section-heading">
         <p className="eyebrow">No-PA-API affiliate command center</p>
-        <h2 id="admin-title">{wishlistOnly ? 'Wishlist import admin' : 'Admin product editor'}</h2>
+        <h2 id="admin-title">{contentPlannerOnly ? 'AI content planner' : wishlistOnly ? 'Wishlist import admin' : 'Admin product editor'}</h2>
       </div>
       <div className="admin-status">
         <Database size={18} />
@@ -293,11 +414,22 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
         <strong>{status}</strong>
         {lastImportSummary && <em>{lastImportSummary.imported} new · {lastImportSummary.duplicates} updated</em>}
       </div>
+      {toast && <div className="admin-toast" role="status">{toast}</div>}
+      <div className="dashboard-widget-grid">
+        {widgetItems.map(([label, value]) => <span key={label}><strong>{value}</strong>{label}</span>)}
+      </div>
+      {contentPlannerOnly ? contentPlannerPanel : (
       <div className="admin-grid">
         {wishlistPanel}
 
         {!wishlistOnly && (
           <>
+            <div className="automation-card ai-engine-card">
+              <h3><Flame size={18} /> AI Auto Deal Engine</h3>
+              <p>Scores discount percentage, price drop, rating, reviews, category demand, clicks, WhatsApp shares, recent views, and manual boost. It reorders homepage sections, updates HOT DEAL badges, and regenerates captions locally without PA API.</p>
+              <button type="button" onClick={runDealEngineNow} disabled={!products.length}>Run AI Deal Engine Now</button>
+            </div>
+
             <form onSubmit={(event) => { event.preventDefault(); runImport(() => searchAmazonProducts(keywords), 'Searching local product database...'); }}>
               <h3><Search size={18} /> Local search/import</h3>
               <input value={keywords} onChange={(event) => setKeywords(event.target.value)} placeholder="Search stored products" />
@@ -352,6 +484,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
                 <input value={editor.reviewCount} onChange={(event) => setEditor({ ...editor, reviewCount: event.target.value })} placeholder="Review count" />
                 <input value={editor.availability} onChange={(event) => setEditor({ ...editor, availability: event.target.value })} placeholder="Availability copy" />
                 <label className="checkbox-row"><input type="checkbox" checked={editor.featured} onChange={(event) => setEditor({ ...editor, featured: event.target.checked })} /> Auto feature</label>
+                <label className="checkbox-row"><input type="checkbox" checked={editor.adminBoost} onChange={(event) => setEditor({ ...editor, adminBoost: event.target.checked })} /> Manual admin boost</label>
               </div>
               <div className="editor-grid">
                 <input value={editor.image} onChange={(event) => setEditor({ ...editor, image: event.target.value })} placeholder="Primary image URL or uploaded data URL" />
@@ -377,6 +510,17 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
               <button type="submit">Save WhatsApp settings</button>
             </form>
 
+            <form className="telegram-settings-form" onSubmit={saveTelegramAdminSettings}>
+              <h3><Bot size={18} /> Telegram auto post settings</h3>
+              <p className="admin-help">Add bot token only in admin. It is not displayed on storefront product cards. For production, move the token to a serverless environment variable before enabling unattended posting.</p>
+              <input type="password" value={telegramSettings.botToken || ''} onChange={(event) => setTelegramSettings({ ...telegramSettings, botToken: event.target.value })} placeholder="Telegram bot token" autoComplete="off" />
+              <input value={telegramSettings.channelId} onChange={(event) => setTelegramSettings({ ...telegramSettings, channelId: event.target.value })} placeholder="Telegram channel ID e.g. @gadgetsmela" />
+              <label className="checkbox-row"><input type="checkbox" checked={telegramSettings.autoPostEnabled} onChange={(event) => setTelegramSettings({ ...telegramSettings, autoPostEnabled: event.target.checked })} /> Enable auto post preparation</label>
+              <button type="submit">Save Telegram settings</button>
+            </form>
+
+            {contentPlannerPanel}
+
             <div className="automation-card email-command-center">
               <h3><MailCheck size={18} /> Deal alert automation</h3>
               <p>Subscriber model stores name, email, tags, country, and createdAt locally or through /api/subscribers, then syncs to Resend, Brevo, or Mailchimp when environment keys are configured.</p>
@@ -399,6 +543,8 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
                 <span>Affiliate clicks <strong>{marketingStats.analytics.affiliateClicks}</strong></span>
                 <span>WhatsApp clicks <strong>{marketingStats.analytics.whatsappClicks}</strong></span>
                 <span>Products shared <strong>{Object.values(marketingStats.analytics.productShares || {}).reduce((total, count) => total + count, 0)}</strong></span>
+                <span>Telegram clicks <strong>{marketingStats.analytics.telegramClicks}</strong></span>
+                <span>Instagram clicks <strong>{marketingStats.analytics.instagramSourceClicks}</strong></span>
               </div>
               <h4>Country-wise WhatsApp clicks</h4>
               {Object.entries(marketingStats.analytics.countryWhatsAppClicks || {}).length ? Object.entries(marketingStats.analytics.countryWhatsAppClicks || {}).map(([country, clicks]) => <span className="clicked-product" key={country}>{country}<strong>{clicks}</strong></span>) : <p className="admin-help">Country clicks appear after WhatsApp shares.</p>}
@@ -412,7 +558,13 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
 
             <div className="automation-card campaign-system">
               <h3><MailCheck size={18} /> Campaign system</h3>
-              <p>Prepared automations for Deal of the Day, daily deal emails, weekly top gadgets digest, and Amazon festival sale blasts with dark responsive product-card templates.</p>
+              <p>Campaigns can select products, auto assign badges, generate captions, prepare Telegram posts, and create homepage sections.</p>
+              {dealCampaigns.map((campaign) => (
+                <details key={campaign.id}>
+                  <summary>{campaign.name} <span>{campaign.badge}</span></summary>
+                  <p>{campaign.products.length} products · homepage section: {campaign.homepageSectionTitle}</p>
+                </details>
+              ))}
               {campaignPlans.map((campaign) => (
                 <details key={campaign.id}>
                   <summary>{campaign.title} <span>{campaign.cadence}</span></summary>
@@ -424,7 +576,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
             <div className="automation-card">
               <h3><RefreshCw size={18} /> Local refresh</h3>
               <p>Refresh keeps locally edited products current without PA API calls. Affiliate buttons still redirect to India, USA, UK, or Canada Amazon with the correct tracking tag.</p>
-              <button type="button" onClick={() => runImport(async () => refreshProducts(products, selectedCountry, true), 'Refreshing local product timestamps and schema data...')} disabled={isSyncing || !products.length}>{isSyncing ? 'Refreshing...' : 'Refresh local database'}</button>
+              <button type="button" onClick={() => runImport(async () => refreshProducts(products, selectedCountry, true), 'Refreshing local scores, badges, homepage sections, and generated content...')} disabled={isSyncing || !products.length}>{isSyncing ? 'Refreshing...' : 'Refresh local database'}</button>
             </div>
 
             <div className="automation-card product-editor-list">
@@ -435,6 +587,7 @@ export default function AdminDashboard({ products, selectedCountry, onProductsCh
           </>
         )}
       </div>
+      )}
     </section>
   );
 }

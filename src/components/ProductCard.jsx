@@ -1,5 +1,5 @@
 import { ExternalLink, Eye, Star, TrendingUp } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DEFAULT_COUNTRY } from '../data/countries.js';
 import { getAffiliateUrl } from '../utils/affiliate.js';
 import { formatCurrency, getProductPrices } from '../utils/format.js';
@@ -16,6 +16,11 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
   const [imageIndex, setImageIndex] = useState(0);
   const [isImageLoaded, setIsImageLoaded] = useState(false);
   const activeImage = repairAmazonImageUrl(imageCandidates[imageIndex] || imageSources.src || imageSources.placeholder, product.asin);
+  const badgeClass = String(product.autoBadge || product.badge || '').toLowerCase().replace(/[^a-z0-9]+/g, '-');
+
+  useEffect(() => {
+    trackMarketingEvent('productView', { productId: product.id, category: product.category });
+  }, [product.id, product.category]);
 
   function handleImageError() {
     setIsImageLoaded(false);
@@ -46,9 +51,9 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
             onError={handleImageError}
           />
         </picture>
-        <span className={`product-badge ${product.bestDeal ? 'best-deal' : ''}`}>{product.badge}</span>
+        <span className={`product-badge badge-${badgeClass} ${product.bestDeal ? 'best-deal' : ''}`}>{product.autoBadge || product.badge}</span>
         {product.featured && <span className="featured-badge">Featured</span>}
-        {product.trendingScore >= 110 && <span className="trend-badge"><TrendingUp size={14} /> Trending</span>}
+        {product.trendingScore >= 90 && <span className="trend-badge"><TrendingUp size={14} /> {product.dealScore || product.trendingScore}</span>}
       </div>
       <div className="product-body">
         <p className="product-category">{product.brand ? `${product.brand} · ` : ''}{product.category}</p>
@@ -69,7 +74,7 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
           <em>{product.discountPercent || 0}% off</em>
         </div>
         <div className="card-actions">
-          <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener" onClick={() => { trackMarketingEvent('affiliateClick', { productId: product.id }); trackMarketingEvent('productClick', { productId: product.id }); }}>
+          <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener" onClick={() => { trackMarketingEvent('affiliateClick', { productId: product.id }); trackMarketingEvent('productClick', { productId: product.id, category: product.category }); }}>
             Amazon <ExternalLink size={16} />
           </a>
           <button className="quick-button" type="button" onClick={() => onQuickView?.(product)}>

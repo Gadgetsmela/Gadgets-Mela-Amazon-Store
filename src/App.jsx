@@ -11,6 +11,7 @@ import AffiliateDisclosure from './components/AffiliateDisclosure.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
 import ProductQuickView from './components/ProductQuickView.jsx';
 import TrendingProducts from './components/TrendingProducts.jsx';
+import DealEngineSections from './components/DealEngineSections.jsx';
 import DealAlertCapture from './components/DealAlertCapture.jsx';
 import FloatingWhatsAppCTA from './components/FloatingWhatsAppCTA.jsx';
 import WhatsAppChannelCTA from './components/WhatsAppChannelCTA.jsx';
@@ -18,6 +19,8 @@ import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
 import { getOptimizedImageSources } from './utils/productImages.js';
+import { getMarketingAnalytics } from './services/dealMarketing.js';
+import { buildHomepageSections, runAiDealEngine } from './services/aiDealEngine.js';
 
 function upsertMeta(selector, createElement) {
   let element = document.head.querySelector(selector);
@@ -37,7 +40,9 @@ export default function App() {
   const [productError, setProductError] = useState('');
   const productsRef = useRef(products);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
-  const isWishlistImportPage = typeof window !== 'undefined' && window.location.pathname === '/admin/wishlist-import';
+  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const isWishlistImportPage = currentPath === '/admin/wishlist-import';
+  const isContentPlannerPage = currentPath === '/admin/content-planner';
 
   useEffect(() => {
     const loadingTimer = window.setTimeout(() => {
@@ -134,8 +139,15 @@ export default function App() {
     });
   }, [activeCategory, products, query]);
 
+  const dealEngineSections = useMemo(() => buildHomepageSections(products, getMarketingAnalytics()), [products]);
+
   function handleProductsChange(nextProducts) {
     setProducts(saveProducts(nextProducts));
+  }
+
+  function handleRunDealEngine() {
+    const engineResult = runAiDealEngine(productsRef.current, getMarketingAnalytics(), selectedCountry);
+    setProducts(saveProducts(engineResult.products));
   }
 
   return (
@@ -156,8 +168,8 @@ export default function App() {
         onCountryChange={setSelectedCountry}
       />
       <main>
-        {isWishlistImportPage ? (
-          <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} wishlistOnly />
+        {isWishlistImportPage || isContentPlannerPage ? (
+          <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} wishlistOnly={isWishlistImportPage} contentPlannerOnly={isContentPlannerPage} onRunDealEngine={handleRunDealEngine} />
         ) : (
           <>
             <Hero />
@@ -165,13 +177,14 @@ export default function App() {
             <DealStrip products={products} />
             <WhatsAppChannelCTA selectedCountry={selectedCountry} />
             <TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
+            <DealEngineSections sections={dealEngineSections} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
             <CategoryTabs
               categories={categories}
               activeCategory={activeCategory}
               onCategoryChange={setActiveCategory}
             />
             <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} error={productError} onQuickView={setQuickViewProduct} />
-            <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} />
+            <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} onRunDealEngine={handleRunDealEngine} />
             <BuyingGuides />
             <Newsletter />
           </>
