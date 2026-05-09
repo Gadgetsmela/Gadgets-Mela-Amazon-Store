@@ -1,5 +1,5 @@
 import ProductCard from './ProductCard.jsx';
-import ProductSkeleton from './ProductSkeleton.jsx';
+import ProductSkeleton from './skeletons/ProductSkeleton.tsx';
 
 export default function ProductGrid({ products, selectedCountry, isLoading = false, error = '', onQuickView }) {
   return (
