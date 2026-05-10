@@ -1568,3 +1568,159 @@ button, a, input, select, textarea { min-height: 44px; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Public homepage hero slider */
+.hero-slider {
+  position: relative;
+  min-height: min(720px, calc(100vh - 6rem));
+  overflow: hidden;
+}
+.hero-slider::before {
+  position: absolute;
+  inset: 1rem clamp(0.75rem, 3vw, 3rem);
+  z-index: 0;
+  content: '';
+  border: 1px solid rgba(251, 146, 60, 0.16);
+  border-radius: clamp(1.4rem, 4vw, 2.6rem);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(251, 146, 60, 0.22), transparent 19rem),
+    radial-gradient(circle at 86% 22%, rgba(34, 197, 94, 0.16), transparent 20rem),
+    linear-gradient(145deg, rgba(2, 6, 23, 0.72), rgba(15, 23, 42, 0.42));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 28px 80px rgba(0,0,0,0.32);
+}
+.hero-slider > * { position: relative; z-index: 1; }
+.hero-slider .eyebrow { display: inline-flex; align-items: center; gap: 0.45rem; color: #86efac; }
+.hero-slider .hero-copy { animation: slide-copy-in 520ms ease both; }
+.hero-dots { display: flex; gap: 0.45rem; margin-top: 1.35rem; }
+.hero-dots button {
+  width: 0.7rem;
+  height: 0.7rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.5);
+  cursor: pointer;
+  transition: width 220ms ease, background 220ms ease, box-shadow 220ms ease;
+}
+.hero-dots button.is-active {
+  width: 2.2rem;
+  background: #fb923c;
+  box-shadow: 0 0 22px rgba(251, 146, 60, 0.72);
+}
+.hero-slide-card {
+  isolation: isolate;
+  animation: slide-card-in 620ms ease both;
+}
+.hero-slide-card::before {
+  position: absolute;
+  inset: -30% auto auto -15%;
+  z-index: -1;
+  width: 17rem;
+  height: 17rem;
+  content: '';
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.18);
+  filter: blur(12px);
+}
+.hero-slide-card.accent-green {
+  border-color: rgba(134, 239, 172, 0.34);
+  background: linear-gradient(145deg, #020617, #064e3b 48%, #0f172a);
+  box-shadow: 0 30px 80px rgba(2, 6, 23, 0.5), 0 0 70px rgba(34, 197, 94, 0.16);
+}
+.hero-visual {
+  display: grid;
+  place-items: center;
+  min-height: clamp(10rem, 26vw, 17rem);
+  margin: 1.4rem 0;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 1.65rem;
+  background:
+    radial-gradient(circle, rgba(251, 146, 60, 0.24), transparent 52%),
+    rgba(255,255,255,0.08);
+  font-size: clamp(5rem, 15vw, 8.5rem);
+  text-shadow: 0 24px 46px rgba(0,0,0,0.42);
+}
+.accent-green .hero-visual { background: radial-gradient(circle, rgba(34, 197, 94, 0.24), transparent 52%), rgba(255,255,255,0.08); }
+
+/* Clean four-button product card action system */
+.card-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.amazon-button { text-transform: uppercase; letter-spacing: 0.02em; }
+.whatsapp-share-system {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.whatsapp-buy-button,
+.whatsapp-send-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 999px;
+  text-align: center;
+}
+.whatsapp-buy-button { color: #052e16; }
+.viral-share-grid { display: none; }
+
+/* Private admin route gate */
+.admin-login {
+  display: grid;
+  place-items: center;
+  min-height: 72vh;
+  padding: clamp(2rem, 6vw, 5rem) clamp(1rem, 4vw, 4rem);
+}
+.admin-login-card {
+  display: grid;
+  gap: 1rem;
+  width: min(32rem, 100%);
+  padding: clamp(1.35rem, 4vw, 2.4rem);
+  border: 1px solid rgba(251, 146, 60, 0.26);
+  border-radius: 2rem;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(251, 146, 60, 0.26), transparent 17rem),
+    linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(2, 6, 23, 0.96));
+  box-shadow: 0 30px 80px rgba(0,0,0,0.45);
+}
+.admin-login-icon {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  color: #052e16;
+  background: linear-gradient(135deg, #86efac, #22c55e);
+  box-shadow: 0 0 32px rgba(34, 197, 94, 0.36);
+}
+.admin-login-card h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1; letter-spacing: -0.05em; }
+.admin-login-card p { margin: 0; color: #cbd5e1; line-height: 1.65; }
+.admin-login-card label { display: grid; gap: 0.45rem; color: #fed7aa; font-weight: 900; }
+.admin-login-card input {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(251, 146, 60, 0.26);
+  border-radius: 1rem;
+  color: #fff;
+  background: rgba(2, 6, 23, 0.7);
+  outline: 0;
+}
+.admin-login-card button {
+  min-height: 3rem;
+  border: 0;
+  border-radius: 999px;
+  color: #fff;
+  background: linear-gradient(135deg, #fb923c, #ea580c 68%, #c2410c);
+  box-shadow: 0 16px 34px rgba(249, 115, 22, 0.32);
+  font-weight: 950;
+  cursor: pointer;
+}
+.admin-login-error { color: #fecaca; }
+
+@keyframes slide-copy-in { from { opacity: 0; transform: translateX(-18px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes slide-card-in { from { opacity: 0; transform: translateX(18px) scale(0.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
+
+@media (max-width: 720px) {
+  .hero-slider { min-height: auto; padding-bottom: 1.5rem; }
+  .hero-slider::before { inset: 0.65rem; border-radius: 1.5rem; }
+  .hero-dots { justify-content: center; }
+  .whatsapp-share-system { grid-template-columns: 1fr; }
+}

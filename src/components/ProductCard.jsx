@@ -66,7 +66,6 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
         </div>
         <div className="product-meta-row">
           <span>{product.availability || 'Check Amazon for availability'}</span>
-          {product.importStatus && <em>{product.importStatus}</em>}
         </div>
         <div className="price-row">
           <strong>{formatCurrency(price, countryCode)}</strong>
@@ -75,10 +74,10 @@ export default function ProductCard({ product, selectedCountry = DEFAULT_COUNTRY
         </div>
         <div className="card-actions">
           <a className="amazon-button" href={affiliateUrl} target="_blank" rel="noreferrer sponsored noopener" onClick={() => { trackMarketingEvent('affiliateClick', { productId: product.id }); trackMarketingEvent('productClick', { productId: product.id, category: product.category }); }}>
-            Amazon <ExternalLink size={16} />
+            BUY NOW <ExternalLink size={16} />
           </a>
           <button className="quick-button" type="button" onClick={() => onQuickView?.(product)}>
-            <Eye size={16} /> Quick view
+            <Eye size={16} /> QUICK VIEW
           </button>
         </div>
         <WhatsAppShareActions product={product} selectedCountry={countryCode} source={source} />

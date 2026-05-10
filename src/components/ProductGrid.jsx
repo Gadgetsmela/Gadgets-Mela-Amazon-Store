@@ -6,7 +6,7 @@ export default function ProductGrid({ products, selectedCountry, isLoading = fal
     <section className="product-section" aria-live="polite">
       {error && (
         <div className="product-error" role="alert">
-          <strong>Product database notice</strong>
+          <strong>Deal feed notice</strong>
           <span>{error}</span>
         </div>
       )}
@@ -21,8 +21,8 @@ export default function ProductGrid({ products, selectedCountry, isLoading = fal
       )}
       {!isLoading && products.length === 0 && (
         <div className="empty-state">
-          <h3>No local affiliate products stored yet</h3>
-          <p>Use the admin dashboard to add static product cards, import ASINs, parse Amazon URLs, or parse wishlist text without PA API approval.</p>
+          <h3>No matching deals found</h3>
+          <p>Try another search term or category to discover more Gadgets Mela Amazon offers.</p>
         </div>
       )}
     </section>
