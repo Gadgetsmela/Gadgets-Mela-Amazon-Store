@@ -1,5 +1,6 @@
 import { Search, ShoppingBag } from 'lucide-react';
 import { countries } from '../data/countries.js';
+import MobileMenu from './MobileMenu.jsx';
 
 export default function Header({ query, onQueryChange, selectedCountry, onCountryChange }) {
   return (
@@ -53,6 +54,7 @@ export default function Header({ query, onQueryChange, selectedCountry, onCountr
           Shop deals
         </a>
       </div>
+      <MobileMenu />
     </header>
   );
 }

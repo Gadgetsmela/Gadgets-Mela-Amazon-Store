@@ -2,7 +2,7 @@ import { Mail, ShieldCheck, ShoppingBag, Sparkles } from 'lucide-react';
 
 export default function Footer() {
   return (
-    <footer className="site-footer">
+    <footer className="site-footer" id="contact">
       <div className="footer-brand-panel">
         <a className="footer-brand" href="#top" aria-label="Gadgets Mela home">
           <img
@@ -25,9 +25,9 @@ export default function Footer() {
           <strong>Explore</strong>
           <nav aria-label="Footer navigation">
             <a href="#top">Home</a>
-            <a href="#deals">Deals</a>
-            <a href="#guides">Guides</a>
-            <a href="#newsletter">Newsletter</a>
+            <a href="#categories">Categories</a>
+            <a href="#deals">Hot Deals</a>
+            <a href="#whatsapp-deals">WhatsApp Deals</a>
           </nav>
         </div>
         <a className="footer-contact" href="mailto:hello@gadgetsmela.example">

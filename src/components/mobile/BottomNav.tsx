@@ -1,12 +1,12 @@
-import { Home, Flame, Grid3X3, TrendingUp, Mail } from 'lucide-react';
+import { Home, Flame, Grid3X3, MessageCircle, TrendingUp } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', href: '#home', Icon: Home },
-  { id: 'deals', label: 'Deals', href: '#deals', Icon: Flame },
   { id: 'categories', label: 'Categories', href: '#categories', Icon: Grid3X3 },
   { id: 'trending', label: 'Trending', href: '#trending', Icon: TrendingUp },
-  { id: 'newsletter', label: 'Alerts', href: '#newsletter', Icon: Mail },
+  { id: 'deals', label: 'Hot Deals', href: '#deals', Icon: Flame },
+  { id: 'whatsapp-deals', label: 'WhatsApp', href: '#whatsapp-deals', Icon: MessageCircle },
 ];
 
 export default function BottomNav() {
