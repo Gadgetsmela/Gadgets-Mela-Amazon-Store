@@ -1,34 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 128" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 200" role="img" aria-labelledby="title desc">
   <title id="title">GADGETS MELA</title>
-  <desc id="desc">Premium GADGETS MELA text logo with orange gadget accent.</desc>
+  <desc id="desc">Gadgets Mela wordmark inspired by the supplied magenta stencil logo.</desc>
   <defs>
-    <linearGradient id="gm-word" x1="62" x2="510" y1="8" y2="112" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fff7ed"/>
-      <stop offset="0.52" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#fb923c"/>
+    <linearGradient id="gm-magenta" x1="40" x2="600" y1="56" y2="138" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ff6f9d"/>
+      <stop offset="0.48" stop-color="#b11f55"/>
+      <stop offset="1" stop-color="#f05b88"/>
     </linearGradient>
-    <linearGradient id="gm-panel" x1="8" x2="116" y1="10" y2="118" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#111827"/>
-      <stop offset="0.56" stop-color="#0f172a"/>
-      <stop offset="1" stop-color="#431407"/>
-    </linearGradient>
-    <linearGradient id="gm-orange" x1="22" x2="106" y1="18" y2="106" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#fed7aa"/>
-      <stop offset="0.42" stop-color="#fb923c"/>
-      <stop offset="1" stop-color="#ea580c"/>
-    </linearGradient>
-    <filter id="gm-glow" x="-18%" y="-18%" width="136%" height="136%" color-interpolation-filters="sRGB">
-      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#fb923c" flood-opacity="0.25"/>
+    <filter id="word-shadow" x="-8%" y="-28%" width="116%" height="156%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="3" stdDeviation="1.1" flood-color="#000000" flood-opacity="0.65"/>
     </filter>
+    <pattern id="stencil-cuts" width="54" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(-10)">
+      <rect width="54" height="36" fill="transparent"/>
+      <rect x="4" y="13" width="19" height="8" rx="1" fill="#0b0b0d" opacity="0.72"/>
+      <rect x="33" y="6" width="16" height="7" rx="1" fill="#0b0b0d" opacity="0.6"/>
+    </pattern>
   </defs>
-  <rect x="5" y="5" width="118" height="118" rx="34" fill="url(#gm-panel)" stroke="#fb923c" stroke-opacity="0.48" stroke-width="3" filter="url(#gm-glow)"/>
-  <path d="M35 76V44.5h32.5v11H48.8v9.7h17.4V76H35Z" fill="#ffffff"/>
-  <path d="M73 84V44.5h11.9l9 15.2 9-15.2H115V84h-13.4V64.4L92 79.8h-3.9l-9.7-15.4V84H73Z" fill="url(#gm-orange)"/>
-  <path d="M28 94h73.5" stroke="#fb923c" stroke-width="8" stroke-linecap="round"/>
-  <circle cx="37" cy="94" r="5.5" fill="#111827" stroke="#fed7aa" stroke-width="3"/>
-  <circle cx="93" cy="94" r="5.5" fill="#111827" stroke="#fed7aa" stroke-width="3"/>
-  <text x="145" y="61" fill="url(#gm-word)" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="900" letter-spacing="3.5">GADGETS</text>
-  <text x="145" y="103" fill="#fb923c" font-family="Inter, Arial, sans-serif" font-size="38" font-weight="900" letter-spacing="4.5">MELA</text>
-  <path d="M145 70h250" stroke="#fb923c" stroke-opacity="0.42" stroke-width="4" stroke-linecap="round"/>
-  <text x="324" y="103" fill="#cbd5e1" font-family="Inter, Arial, sans-serif" font-size="14" font-weight="800" letter-spacing="2.2">AMAZON AFFILIATE STORE</text>
+  <rect width="640" height="200" fill="#000000"/>
+  <g filter="url(#word-shadow)">
+    <text x="320" y="112" text-anchor="middle" dominant-baseline="middle" fill="url(#gm-magenta)" stroke="#f8d7e1" stroke-width="2.2" paint-order="stroke fill" font-family="Impact, Haettenschweiler, 'Arial Black', sans-serif" font-size="52" font-weight="900" letter-spacing="8">GADGETS MELA</text>
+    <text x="320" y="112" text-anchor="middle" dominant-baseline="middle" fill="url(#stencil-cuts)" font-family="Impact, Haettenschweiler, 'Arial Black', sans-serif" font-size="52" font-weight="900" letter-spacing="8">GADGETS MELA</text>
+  </g>
 </svg>
