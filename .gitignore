@@ -7,3 +7,10 @@ dist/
 coverage/
 .vite/
 playwright-report/
+
+# Generated binary image/icon assets are not supported in PRs.
+*.png
+*.jpg
+*.jpeg
+*.ico
+*.webp
