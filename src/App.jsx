@@ -9,9 +9,10 @@ import Newsletter from './components/Newsletter.jsx';
 import Footer from './components/Footer.jsx';
 import AffiliateDisclosure from './components/AffiliateDisclosure.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
+import AdminLogin from './components/AdminLogin.jsx';
+import { isAdminAuthenticated } from './utils/adminAuth.js';
 import ProductQuickView from './components/ProductQuickView.jsx';
 import TrendingProducts from './components/TrendingProducts.jsx';
-import DealEngineSections from './components/DealEngineSections.jsx';
 import DealAlertCapture from './components/DealAlertCapture.jsx';
 import FloatingWhatsAppCTA from './components/FloatingWhatsAppCTA.jsx';
 import WhatsAppChannelCTA from './components/WhatsAppChannelCTA.jsx';
@@ -24,7 +25,7 @@ import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
 import { getOptimizedImageSources } from './utils/productImages.js';
 import { getMarketingAnalytics } from './services/dealMarketing.js';
-import { buildHomepageSections, runAiDealEngine } from './services/aiDealEngine.js';
+import { runAiDealEngine } from './services/aiDealEngine.js';
 
 function upsertMeta(selector, createElement) {
   let element = document.head.querySelector(selector);
@@ -44,9 +45,24 @@ export default function App() {
   const [productError, setProductError] = useState('');
   const productsRef = useRef(products);
   const [quickViewProduct, setQuickViewProduct] = useState(null);
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '/';
+  const [currentPath, setCurrentPath] = useState(() => (typeof window !== 'undefined' ? window.location.pathname : '/'));
+  const [isAdminAuthed, setIsAdminAuthed] = useState(() => isAdminAuthenticated());
+  const isAdminRoute = currentPath === '/admin' || currentPath.startsWith('/admin/');
+  const isAdminLoginPage = currentPath === '/admin/login';
   const isWishlistImportPage = currentPath === '/admin/wishlist-import';
   const isContentPlannerPage = currentPath === '/admin/content-planner';
+
+  useEffect(() => {
+    const handlePopState = () => setCurrentPath(window.location.pathname);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  useEffect(() => {
+    if (isAdminRoute && !isAdminLoginPage && !isAdminAuthed) {
+      window.history.replaceState(null, '', '/admin/login');
+    }
+  }, [isAdminAuthed, isAdminLoginPage, isAdminRoute]);
 
   useEffect(() => {
     const loadingTimer = window.setTimeout(() => {
@@ -143,7 +159,6 @@ export default function App() {
     });
   }, [activeCategory, products, query]);
 
-  const dealEngineSections = useMemo(() => buildHomepageSections(products, getMarketingAnalytics()), [products]);
 
   function handleProductsChange(nextProducts) {
     setProducts(saveProducts(nextProducts));
@@ -162,7 +177,7 @@ export default function App() {
             <img src="/brand/gm-icon.svg" alt="" width="88" height="88" aria-hidden="true" />
           </div>
           <strong>GADGETS MELA</strong>
-          <span>Loading local affiliate product database...</span>
+          <span>Loading premium Amazon deals...</span>
         </div>
       )}
       <Header
@@ -172,8 +187,16 @@ export default function App() {
         onCountryChange={setSelectedCountry}
       />
       <main className="page-transition">
-        {isWishlistImportPage || isContentPlannerPage ? (
-          <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} wishlistOnly={isWishlistImportPage} contentPlannerOnly={isContentPlannerPage} onRunDealEngine={handleRunDealEngine} />
+        {isAdminRoute ? (
+          isAdminAuthed && !isAdminLoginPage ? (
+            <AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} wishlistOnly={isWishlistImportPage} contentPlannerOnly={isContentPlannerPage} onRunDealEngine={handleRunDealEngine} />
+          ) : (
+            <AdminLogin onAuthenticated={() => {
+              setIsAdminAuthed(true);
+              window.history.replaceState(null, '', '/admin');
+              setCurrentPath('/admin');
+            }} />
+          )
         ) : (
           <>
             <section id="home" className="home-anchor"><Hero /></section>
@@ -182,7 +205,6 @@ export default function App() {
             <SwipeDeals products={filteredProducts} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
             <WhatsAppChannelCTA selectedCountry={selectedCountry} />
             <section id="trending" className="nav-anchor-section"><TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} /></section>
-            <DealEngineSections sections={dealEngineSections} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
             <section id="categories" className="nav-anchor-section">
               <CategoryTabs
                 categories={categories}
@@ -191,18 +213,17 @@ export default function App() {
               />
             </section>
             <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} error={productError} onQuickView={setQuickViewProduct} />
-            <section id="admin" className="nav-anchor-section"><AdminDashboard products={products} selectedCountry={selectedCountry} onProductsChange={handleProductsChange} onRunDealEngine={handleRunDealEngine} /></section>
             <BuyingGuides />
             <Newsletter />
           </>
         )}
       </main>
       <Footer />
-      {!isWishlistImportPage && <DealAlertCapture selectedCountry={selectedCountry} />}
-      {!isWishlistImportPage && <FloatingDealAlert products={filteredProducts} onOpenProduct={setQuickViewProduct} />}
-      {!isWishlistImportPage && <FloatingWhatsAppCTA selectedCountry={selectedCountry} />}
-      {!isWishlistImportPage && !isContentPlannerPage && <PWAInstallPrompt />}
-      {!isWishlistImportPage && !isContentPlannerPage && <BottomNav />}
+      {!isAdminRoute && <DealAlertCapture selectedCountry={selectedCountry} />}
+      {!isAdminRoute && <FloatingDealAlert products={filteredProducts} onOpenProduct={setQuickViewProduct} />}
+      {!isAdminRoute && <FloatingWhatsAppCTA selectedCountry={selectedCountry} />}
+      {!isAdminRoute && <PWAInstallPrompt />}
+      {!isAdminRoute && <BottomNav />}
       <ProductQuickView product={quickViewProduct} selectedCountry={selectedCountry} onClose={() => setQuickViewProduct(null)} />
     </div>
   );
