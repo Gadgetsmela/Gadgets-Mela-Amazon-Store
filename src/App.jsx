@@ -4,8 +4,6 @@ import Hero from './components/Hero.jsx';
 import CategoryTabs from './components/CategoryTabs.jsx';
 import ProductGrid from './components/ProductGrid.jsx';
 import DealStrip from './components/DealStrip.jsx';
-import BuyingGuides from './components/BuyingGuides.jsx';
-import Newsletter from './components/Newsletter.jsx';
 import Footer from './components/Footer.jsx';
 import AffiliateDisclosure from './components/AffiliateDisclosure.jsx';
 import AdminDashboard from './components/AdminDashboard.jsx';
@@ -18,7 +16,6 @@ import FloatingWhatsAppCTA from './components/FloatingWhatsAppCTA.jsx';
 import WhatsAppChannelCTA from './components/WhatsAppChannelCTA.jsx';
 import BottomNav from './components/mobile/BottomNav.tsx';
 import PWAInstallPrompt from './components/pwa/PWAInstallPrompt.tsx';
-import SwipeDeals from './components/mobile/SwipeDeals.tsx';
 import FloatingDealAlert from './components/alerts/FloatingDealAlert.tsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
@@ -200,11 +197,6 @@ export default function App() {
         ) : (
           <>
             <section id="home" className="home-anchor"><Hero /></section>
-            <AffiliateDisclosure />
-            <DealStrip products={products} />
-            <SwipeDeals products={filteredProducts} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} />
-            <WhatsAppChannelCTA selectedCountry={selectedCountry} />
-            <section id="trending" className="nav-anchor-section"><TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} /></section>
             <section id="categories" className="nav-anchor-section">
               <CategoryTabs
                 categories={categories}
@@ -212,9 +204,15 @@ export default function App() {
                 onCategoryChange={setActiveCategory}
               />
             </section>
-            <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} error={productError} onQuickView={setQuickViewProduct} />
-            <BuyingGuides />
-            <Newsletter />
+            <section id="trending" className="nav-anchor-section"><TrendingProducts products={products} selectedCountry={selectedCountry} onQuickView={setQuickViewProduct} /></section>
+            <section id="deals" className="nav-anchor-section"><DealStrip products={products} /></section>
+            <AffiliateDisclosure />
+            <section id="finds" className="nav-anchor-section">
+              <ProductGrid products={filteredProducts} selectedCountry={selectedCountry} isLoading={isLoading} error={productError} onQuickView={setQuickViewProduct} />
+            </section>
+            <section id="whatsapp-deals" className="nav-anchor-section">
+              <WhatsAppChannelCTA selectedCountry={selectedCountry} />
+            </section>
           </>
         )}
       </main>

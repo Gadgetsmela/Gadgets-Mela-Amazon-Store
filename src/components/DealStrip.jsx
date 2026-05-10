@@ -13,7 +13,11 @@ export default function DealStrip({ products = [] }) {
   ];
 
   return (
-    <section className="deal-strip" id="deals">
+    <section className="deal-strip" aria-labelledby="hot-deals-title">
+      <div className="section-heading deal-strip-heading">
+        <p className="eyebrow">Hot deals</p>
+        <h2 id="hot-deals-title">Live Amazon deal pulse</h2>
+      </div>
       {deals.map(({ icon: Icon, value, label }) => (
         <article key={label}>
           <Icon size={22} />
