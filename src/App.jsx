@@ -17,6 +17,7 @@ import WhatsAppChannelCTA from './components/WhatsAppChannelCTA.jsx';
 import BottomNav from './components/mobile/BottomNav.tsx';
 import PWAInstallPrompt from './components/pwa/PWAInstallPrompt.tsx';
 import FloatingDealAlert from './components/alerts/FloatingDealAlert.tsx';
+import BlogSection from './components/blog/BlogSection.tsx';
 import { categories } from './data/categories.js';
 import { DEFAULT_COUNTRY } from './data/countries.js';
 import { buildProductMeta, fetchStoredProducts, loadProducts, refreshProducts, saveProducts } from './services/productAutomation.js';
@@ -197,6 +198,7 @@ export default function App() {
         ) : (
           <>
             <section id="home" className="home-anchor"><Hero /></section>
+            <BlogSection products={products} selectedCountry={selectedCountry} />
             <section id="categories" className="nav-anchor-section">
               <CategoryTabs
                 categories={categories}
